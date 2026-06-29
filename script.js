@@ -86,6 +86,12 @@ const photoCache = new Map();
 function show(name){
   Object.values(screens).forEach(s => s && s.classList.remove('active'));
   if(screens[name]) screens[name].classList.add('active');
+
+  // Final screen reached = stop all background music
+  if(name === 'final'){
+    surpriseFinished = true;
+    stopMusic();
+  }
 }
 
 function initAudio(){
@@ -223,13 +229,17 @@ function startMusic(){
 function stopMusic(){
   if(musicTimer){
     clearTimeout(musicTimer);
+    clearInterval(musicTimer);
     musicTimer = null;
   }
 
   musicStarted = false;
 
-  if(audioCtx && audioCtx.state !== 'closed'){
-    audioCtx.suspend();
+  if(audioCtx){
+    try{
+      audioCtx.close();
+    }catch(e){}
+    audioCtx = null;
   }
 }
 
@@ -682,3 +692,13 @@ bindTap(playBtn, startGame);
 bindTap(firstGift, handleFirstGift);
 bindTap(secondGift, handleSecondGift);
 bindTap(replayBtn, replay);
+
+window.addEventListener('pagehide', function(){
+  stopMusic();
+});
+
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    stopMusic();
+  }
+});
