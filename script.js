@@ -24,12 +24,22 @@ const photos = [
   'photos/photo12.jpg'
 ];
 
+// After all 12 photos, this one opens full-screen.
+// Upload it inside photos folder as fullphoto.jpg.
+const fullPhotoSources = [
+  'photos/fullphoto.jpg',
+  'photos/fullphoto.jpg.jpg',
+  'photos/fullphoto.png',
+  'photos/fullphoto.jpeg',
+  'photos/fullphoto.webp'
+];
+
 const TARGET_STARS = 20;
 const TEXT_FORM_MS = 1250;
 const BLUR_BEFORE_GIFT_MS = 6400;
 const SECOND_GIFT_DELAY_MS = 7300;
 const PHOTO_DURATION_MS = 5200;
-const CACHE_VERSION = '50';
+const CACHE_VERSION = '60';
 
 let collected = 0;
 let gameRunning = false;
@@ -101,7 +111,28 @@ function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
 function collectSound(){ tone(900,.1,'sine',.11); tone(1280,.17,'triangle',.085,.05); }
 function boxSound(){ tone(220,.18,'sine',.08); tone(440,.25,'triangle',.1,.08); tone(880,.42,'sine',.09,.18); tone(1320,.5,'triangle',.065,.28); }
 function revealSound(){ tone(392,.35,'sine',.08); tone(523,.42,'triangle',.09,.14); tone(784,.52,'sine',.085,.3); tone(1046,.66,'triangle',.075,.46); }
-function photoSound(){ tone(640,.16,'triangle',.08); tone(980,.24,'sine',.07,.08); }
+function photoSound(){
+  // Softer magical whoosh + sparkle when each photo changes.
+  tone(520,.13,'triangle',.06);
+  tone(820,.18,'sine',.065,.05);
+  tone(1180,.24,'triangle',.055,.12);
+  tone(1560,.22,'sine',.035,.2);
+}
+
+function finalPhotoSound(){
+  // Bigger cinematic reveal for the final full-screen photo.
+  tone(196,.28,'sine',.08);
+  tone(392,.38,'triangle',.08,.08);
+  tone(784,.55,'sine',.075,.24);
+  tone(1175,.65,'triangle',.055,.42);
+}
+
+function photoLightFlash(strong=false){
+  const fx = document.createElement('div');
+  fx.className = strong ? 'photoLightFx strong' : 'photoLightFx';
+  app.appendChild(fx);
+  setTimeout(()=>fx.remove(), strong ? 1400 : 900);
+}
 
 function startMusic(){
   const notes=[261.63,329.63,392,523.25,392,329.63];
@@ -370,6 +401,14 @@ function preloadAllPhotos(){
   return Promise.all(photos.map(src => preloadPhoto(src)));
 }
 
+async function loadFirstAvailablePhoto(sources){
+  for(const src of sources){
+    const img = await preloadPhoto(src);
+    if(img) return img;
+  }
+  return null;
+}
+
 async function startPhotos(){
   show('photo');
   photoRunId++;
@@ -385,7 +424,7 @@ async function startPhotos(){
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
   if(i>=list.length){
-    show('final');
+    showFullPhoto();
     return;
   }
 
@@ -417,9 +456,45 @@ async function showPhoto(i, list, runId = photoRunId){
   }
 
   photoSound();
+  photoLightFlash(false);
   photoStage.appendChild(card);
-  sparkBurst(app.clientWidth/2,app.clientHeight/2,26);
+  sparkBurst(app.clientWidth/2,app.clientHeight/2,34);
   setTimeout(()=>showPhoto(i+1,list,runId),PHOTO_DURATION_MS);
+}
+
+
+async function showFullPhoto(){
+  photoStage.innerHTML = '<div class="placeholder">Opening final memory ✨</div>';
+  photoCount.textContent = '';
+
+  const loadedImg = await loadFirstAvailablePhoto(fullPhotoSources);
+  photoStage.innerHTML = '';
+  photoCount.textContent = '';
+  finalPhotoSound();
+  photoLightFlash(true);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'fullPhotoReveal';
+
+  if(loadedImg){
+    const img = document.createElement('img');
+    img.src = loadedImg.src;
+    img.alt = 'Final birthday photo';
+    wrap.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'fullPhotoPlaceholder';
+    ph.innerHTML = 'Upload photos/fullphoto.jpg';
+    wrap.appendChild(ph);
+  }
+
+  const glow = document.createElement('div');
+  glow.className = 'fullPhotoGlow';
+  photoStage.appendChild(glow);
+  photoStage.appendChild(wrap);
+  sparkBurst(app.clientWidth/2, app.clientHeight*.55, 55);
+
+  setTimeout(()=>show('final'), 7200);
 }
 
 function handleFirstGift(){
@@ -457,6 +532,8 @@ function handleSecondGift(){
 function replay(){
   textAnimating=false;
   photoRunId++;
+  photoStage.innerHTML='';
+  photoCount.textContent='';
   ctx.clearRect(0,0,canvas.width,canvas.height);
   screens.wish.classList.remove('blur');
   secondGift.classList.remove('show','open');
