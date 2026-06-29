@@ -395,7 +395,7 @@ body{
 }
 
 .wishImageBg.move{
-  animation:wishBgMove 12s ease-in-out infinite alternate;
+  animation:wishBgMove 9s ease-in-out infinite alternate;
 }
 
 @keyframes wishBgMove{
