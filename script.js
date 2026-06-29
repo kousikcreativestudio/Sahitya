@@ -1,4 +1,4 @@
-const CACHE_VERSION = '101';
+const CACHE_VERSION = '102';
 
 const preloadImages = [
   `./assets/game-bg.jpg?v=${CACHE_VERSION}`,
@@ -49,6 +49,8 @@ let secondGiftClicked = false;
 let audioCtx = null;
 let musicStarted = false;
 let musicTimer = null;
+let musicIndex = 0;
+let activeSoundNodes = [];
 let textParticles = [];
 let textAnimating = false;
 let textStartTime = 0;
@@ -87,40 +89,60 @@ function show(name){
   Object.values(screens).forEach(s => s && s.classList.remove('active'));
   if(screens[name]) screens[name].classList.add('active');
 
-  // Final screen reached = stop all background music
+  // Stop every scheduled/running music note when the surprise is complete.
   if(name === 'final'){
-    surpriseFinished = true;
-    stopMusic();
+    setTimeout(stopMusic, 100);
   }
 }
 
 function initAudio(){
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if(audioCtx.state === 'suspended') audioCtx.resume();
+  if(surpriseFinished) return;
+
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if(audioCtx.state === 'suspended'){
+    audioCtx.resume();
+  }
+
   if(!musicStarted){
     musicStarted = true;
     startMusic();
   }
 }
 
-function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
-  if(!audioCtx || !freq) return;
+function tone(freq, dur = .2, type = 'sine', vol = .09, delay = 0){
+  if(!audioCtx || !freq || surpriseFinished) return;
+
   const t = audioCtx.currentTime + delay;
   const o = audioCtx.createOscillator();
   const g = audioCtx.createGain();
+
+  activeSoundNodes.push({ source: o, gain: g });
+
   o.type = type;
-  o.frequency.setValueAtTime(freq,t);
-  g.gain.setValueAtTime(0,t);
-  g.gain.linearRampToValueAtTime(vol,t+.02);
-  g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.frequency.setValueAtTime(freq, t);
+
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + .02);
+  g.gain.exponentialRampToValueAtTime(.001, t + dur);
+
   o.connect(g);
   g.connect(audioCtx.destination);
+
+  o.onended = function(){
+    try{ o.disconnect(); }catch(e){}
+    try{ g.disconnect(); }catch(e){}
+    activeSoundNodes = activeSoundNodes.filter(n => n.source !== o);
+  };
+
   o.start(t);
-  o.stop(t+dur+.05);
+  o.stop(t + dur + .05);
 }
 
 function noiseSweep(dur=.32, vol=.045, delay=0){
-  if(!audioCtx) return;
+  if(!audioCtx || surpriseFinished) return;
 
   const t = audioCtx.currentTime + delay;
   const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * dur));
@@ -136,6 +158,8 @@ function noiseSweep(dur=.32, vol=.045, delay=0){
   const filter = audioCtx.createBiquadFilter();
   const gain = audioCtx.createGain();
 
+  activeSoundNodes.push({ source, filter, gain });
+
   filter.type = 'bandpass';
   filter.frequency.setValueAtTime(450, t);
   filter.frequency.exponentialRampToValueAtTime(2600, t + dur);
@@ -149,6 +173,14 @@ function noiseSweep(dur=.32, vol=.045, delay=0){
   source.connect(filter);
   filter.connect(gain);
   gain.connect(audioCtx.destination);
+
+  source.onended = function(){
+    try{ source.disconnect(); }catch(e){}
+    try{ filter.disconnect(); }catch(e){}
+    try{ gain.disconnect(); }catch(e){}
+    activeSoundNodes = activeSoundNodes.filter(n => n.source !== source);
+  };
+
   source.start(t);
   source.stop(t + dur + 0.02);
 }
@@ -198,8 +230,13 @@ function photoLightFlash(target, strong=false){
 }
 
 function startMusic(){
-  // Soft birthday melody background music.
-  if(musicTimer) clearTimeout(musicTimer);
+  // Birthday melody, played one note at a time so stopMusic can stop it fully.
+  if(musicTimer){
+    clearTimeout(musicTimer);
+    musicTimer = null;
+  }
+
+  musicIndex = 0;
 
   const melody = [
     [392.00,.32], [392.00,.32], [440.00,.65], [392.00,.65], [523.25,.65], [493.88,1.15], [0,.35],
@@ -208,37 +245,46 @@ function startMusic(){
     [698.46,.32], [698.46,.32], [659.25,.65], [523.25,.65], [587.33,.65], [523.25,1.40], [0,1.20]
   ];
 
-  function playMelodyLoop(){
-    let delay = 0;
-    melody.forEach(note => {
-      const freq = note[0];
-      const dur = note[1];
-      if(freq > 0){
-        tone(freq, dur, 'sine', .034, delay);
-        tone(freq * 2, dur * .72, 'triangle', .013, delay + .04);
-        tone(freq / 2, dur * .9, 'sine', .010, delay + .02);
-      }
-      delay += dur;
-    });
-    musicTimer = setTimeout(playMelodyLoop, delay * 1000);
+  function playNextNote(){
+    if(!musicStarted || surpriseFinished || !audioCtx) return;
+
+    const note = melody[musicIndex % melody.length];
+    const freq = note[0];
+    const dur = note[1];
+
+    if(freq > 0){
+      tone(freq, dur, 'sine', .034, 0);
+      tone(freq * 2, dur * .72, 'triangle', .013, .04);
+      tone(freq / 2, dur * .9, 'sine', .010, .02);
+    }
+
+    musicIndex++;
+    musicTimer = setTimeout(playNextNote, dur * 1000);
   }
 
-  playMelodyLoop();
+  playNextNote();
 }
 
 function stopMusic(){
+  surpriseFinished = true;
+  musicStarted = false;
+
   if(musicTimer){
     clearTimeout(musicTimer);
     clearInterval(musicTimer);
     musicTimer = null;
   }
 
-  musicStarted = false;
+  activeSoundNodes.forEach(n => {
+    try{ n.source.stop(0); }catch(e){}
+    try{ n.source.disconnect(); }catch(e){}
+    try{ n.filter && n.filter.disconnect(); }catch(e){}
+    try{ n.gain && n.gain.disconnect(); }catch(e){}
+  });
+  activeSoundNodes = [];
 
   if(audioCtx){
-    try{
-      audioCtx.close();
-    }catch(e){}
+    try{ audioCtx.close(); }catch(e){}
     audioCtx = null;
   }
 }
@@ -607,14 +653,10 @@ async function showFullPhoto(runId = photoRunId){
   sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
 
   setTimeout(() => {
-  if(runId !== photoRunId) return;
-
-  show('final');
-
-  // Stop background music after surprise complete
-  surpriseFinished = true;
-  stopMusic();
-}, FULL_PHOTO_DISPLAY_MS);
+    if(runId !== photoRunId) return;
+    show('final');
+  }, FULL_PHOTO_DISPLAY_MS);
+}
 
 function handleFirstGift(){
   if(firstGiftClicked) return;
@@ -693,9 +735,9 @@ bindTap(firstGift, handleFirstGift);
 bindTap(secondGift, handleSecondGift);
 bindTap(replayBtn, replay);
 
-window.addEventListener('pagehide', function(){
-  stopMusic();
-});
+// Stop sound when the final page is hidden, phone is locked, or the tab is closed.
+window.addEventListener('pagehide', stopMusic);
+window.addEventListener('beforeunload', stopMusic);
 
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
