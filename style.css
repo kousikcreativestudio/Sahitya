@@ -75,7 +75,7 @@ body{
 }
 
 .gameBg{
-  background-image:url("./assets/game-bg.jpg?v=100");
+  background-image:url("./assets/game-bg.jpg?v=101");
 }
 
 .startContent{
@@ -125,7 +125,7 @@ body{
 .playBtn{
   position:absolute;
   left:50%;
-  top:66%;
+  top:67%;
   transform:translate(-50%,-50%);
   z-index:9999;
   border:0;
