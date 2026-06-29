@@ -1,3 +1,14 @@
+const preloadImages = [
+  "assets/game-bg.jpg",
+  "assets/wish-bg.png",
+  "assets/gift-box.png"
+];
+
+preloadImages.forEach(src => {
+  const img = new Image();
+  img.src = src;
+});
+
 const photos = [
   // Add selected photos later, example:
   // 'photos/photo1.jpg',
