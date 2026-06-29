@@ -59,6 +59,7 @@ const SECOND_GIFT_DELAY_MS = 7300;
 let collected = 0;
 let gameRunning = false;
 let spawnTimer = null;
+let firstGiftClicked = false;
 let audioCtx = null;
 let musicStarted = false;
 let musicTimer = null;
