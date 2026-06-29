@@ -1,4 +1,4 @@
-const CACHE_VERSION = '100';
+const CACHE_VERSION = '101';
 
 const preloadImages = [
   `./assets/game-bg.jpg?v=${CACHE_VERSION}`,
@@ -130,8 +130,9 @@ function noiseSweep(dur=.32, vol=.045, delay=0){
   const gain = audioCtx.createGain();
 
   filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(650, t);
+  filter.frequency.setValueAtTime(450, t);
   filter.frequency.exponentialRampToValueAtTime(2600, t + dur);
+  filter.Q.setValueAtTime(0.8, t);
 
   gain.gain.setValueAtTime(0.0001, t);
   gain.gain.linearRampToValueAtTime(vol, t + 0.035);
@@ -141,9 +142,8 @@ function noiseSweep(dur=.32, vol=.045, delay=0){
   source.connect(filter);
   filter.connect(gain);
   gain.connect(audioCtx.destination);
-
   source.start(t);
-  source.stop(t + dur);
+  source.stop(t + dur + 0.02);
 }
 
 function collectSound(){
@@ -166,12 +166,12 @@ function revealSound(){
 }
 
 function photoSound(){
-  // Different from star collect: soft camera whoosh + sparkle.
-  noiseSweep(.34, .046, 0);
-  tone(245,.07,'triangle',.030,.03);
-  tone(490,.10,'sine',.026,.12);
-  tone(980,.16,'triangle',.021,.22);
-  tone(1470,.12,'sine',.016,.33);
+  // Different from star-collect ding: camera whoosh + soft shutter sparkle.
+  noiseSweep(.34, .052, 0);
+  tone(180, .045, 'square', .018, .03);
+  tone(120, .055, 'square', .014, .08);
+  tone(740, .10, 'triangle', .020, .15);
+  tone(1480, .14, 'sine', .018, .23);
 }
 
 function finalPhotoSound(){
@@ -503,28 +503,27 @@ async function startPhotos(){
   show('photo');
   photoRunId++;
   const runId = photoRunId;
-
   cachedFullPhoto = null;
+
   photoStage.innerHTML = '<div class="placeholder">Preparing memories ✨</div>';
   photoCount.textContent = '';
 
-  // Start loading fullphoto immediately in background so it opens fast after photo 12.
-  const fullPhotoPromise = loadFirstAvailablePhoto(fullPhotoSources).then(img => {
-    cachedFullPhoto = img;
-    return img;
-  });
-
-  await preloadAllPhotos();
-  fullPhotoPromise.catch(() => {});
+  // Preload all 12 photos and fullphoto before the photo sequence starts.
+  // This removes the delay after photo 12 finishes.
+  const results = await Promise.all([
+    preloadAllPhotos(),
+    loadFirstAvailablePhoto(fullPhotoSources)
+  ]);
+  cachedFullPhoto = results[1];
 
   if(runId !== photoRunId) return;
+
   showPhoto(0, photos, runId);
 }
 
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
 
-  // After photo 12 finishes, open fullphoto directly.
   if(i >= list.length){
     photoStage.innerHTML = '';
     photoCount.textContent = '';
@@ -563,13 +562,13 @@ async function showPhoto(i, list, runId = photoRunId){
 async function showFullPhoto(runId = photoRunId){
   if(runId !== photoRunId) return;
 
-  const loadedImg = cachedFullPhoto || await loadFirstAvailablePhoto(fullPhotoSources);
-  if(runId !== photoRunId) return;
-
   show('finalPhoto');
   fullPhotoPopup.classList.remove('show');
   fullPhotoImg.removeAttribute('src');
   fullPhotoImg.alt = 'Final Photo';
+
+  const loadedImg = cachedFullPhoto || await loadFirstAvailablePhoto(fullPhotoSources);
+  if(runId !== photoRunId) return;
 
   if(loadedImg){
     fullPhotoImg.src = loadedImg.src;
@@ -578,13 +577,9 @@ async function showFullPhoto(runId = photoRunId){
   }
 
   finalPhotoSound();
-
-  setTimeout(() => {
-    if(runId !== photoRunId) return;
-    fullPhotoPopup.classList.add('show');
-    photoLightFlash(fullPhotoPopup, true);
-    sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
-  }, 80);
+  fullPhotoPopup.classList.add('show');
+  photoLightFlash(fullPhotoPopup, true);
+  sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
 
   setTimeout(() => {
     if(runId !== photoRunId) return;
@@ -643,7 +638,7 @@ function replay(){
   fullPhotoImg.removeAttribute('src');
   firstGiftClicked=false;
   secondGiftClicked=false;
-  cachedFullPhoto=null;
+  cachedFullPhoto = null;
   show('start');
 }
 
