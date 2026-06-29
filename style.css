@@ -75,7 +75,7 @@ body{
 }
 
 .gameBg{
-  background-image:url("./assets/game-bg.jpg?v=50");
+  background-image:url("./assets/game-bg.jpg?v=75");
 }
 
 .startContent{
@@ -800,4 +800,149 @@ body{
   to {
     transform: scale(1.06);
   }
+}
+
+
+/* CLEAN FINAL FULLPHOTO FLOW OVERRIDE */
+#fullPhotoScreen{
+  background:#020714;
+}
+
+#fullPhotoScreen .fullPhotoBg{
+  filter:blur(6px) brightness(.72) saturate(1.08);
+  transform:scale(1.08);
+}
+
+.fullPhotoGiftBox{
+  position:absolute !important;
+  left:50% !important;
+  bottom:12% !important;
+  transform:translateX(-50%) scale(1) !important;
+  width:min(70vw,320px) !important;
+  aspect-ratio:1/1 !important;
+  border:0 !important;
+  background:transparent !important;
+  z-index:20 !important;
+  cursor:pointer !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  filter:drop-shadow(0 0 36px rgba(255,210,72,.95)) !important;
+  animation:giftFloat 2s ease-in-out infinite !important;
+}
+
+.fullPhotoGiftBox img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  display:block !important;
+  pointer-events:none !important;
+}
+
+.fullPhotoGiftBox.hide{
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:translateX(-50%) scale(.55) !important;
+  transition:opacity .55s ease, transform .55s ease !important;
+}
+
+.fullPhotoLabel{
+  position:absolute !important;
+  left:5% !important;
+  right:5% !important;
+  bottom:6% !important;
+  z-index:21 !important;
+  text-align:center !important;
+  color:#fff3bf !important;
+  font-size:18px !important;
+  text-shadow:0 0 15px rgba(255,212,75,.95) !important;
+  pointer-events:none !important;
+}
+
+.fullPhotoLabel.hide{
+  opacity:0 !important;
+  transition:opacity .45s ease !important;
+}
+
+.fullPhotoPopup{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:30 !important;
+  display:grid !important;
+  place-items:center !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:scale(.92) !important;
+  overflow:hidden !important;
+  background:#020714 !important;
+}
+
+.fullPhotoPopup.show{
+  opacity:1 !important;
+  transform:scale(1) !important;
+  transition:opacity .9s ease, transform .95s ease !important;
+}
+
+.fullPhotoPopup img{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  border-radius:0 !important;
+  z-index:1 !important;
+  filter:brightness(1.05) contrast(1.02) !important;
+  animation:fullPhotoZoom 9s ease-in-out forwards !important;
+}
+
+.fullPhotoPopup.show::before{
+  content:"";
+  position:absolute;
+  inset:-22%;
+  z-index:3;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,238,168,.62), transparent 28%),
+    linear-gradient(112deg, transparent 0 38%, rgba(255,250,210,.48) 48%, transparent 60%);
+  mix-blend-mode:screen;
+  animation:finalLightSweep 2.4s ease-out forwards;
+}
+
+.fullPhotoPopup.show::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,.36) 100%),
+    linear-gradient(180deg, rgba(255,224,116,.16), transparent 20%, transparent 76%, rgba(255,192,55,.2));
+}
+
+.finalLight{
+  position:absolute !important;
+  inset:-10% !important;
+  z-index:2 !important;
+  pointer-events:none !important;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(255,204,67,.22), transparent 46%),
+    radial-gradient(circle at 50% 96%, rgba(255,178,37,.24), transparent 50%) !important;
+  mix-blend-mode:screen !important;
+  animation:premiumLight 3.6s ease-in-out infinite !important;
+}
+
+@keyframes finalLightSweep{
+  0%{opacity:0;transform:translateX(-22%) scale(.9);filter:blur(8px)}
+  20%{opacity:1}
+  100%{opacity:0;transform:translateX(22%) scale(1.15);filter:blur(18px)}
+}
+
+@keyframes premiumLight{
+  0%,100%{opacity:.42;transform:scale(.98)}
+  50%{opacity:.82;transform:scale(1.06)}
+}
+
+@keyframes fullPhotoZoom{
+  from{transform:scale(1);}
+  to{transform:scale(1.07);}
 }
