@@ -61,7 +61,8 @@ const screens = {
   gift: document.getElementById('giftScreen'),
   wish: document.getElementById('wishScreen'),
   photo: document.getElementById('photoScreen'),
-  final: document.getElementById('finalScreen')
+  finalPhoto: document.getElementById('fullPhotoScreen'),
+final: document.getElementById('finalScreen')
 };
 
 const playBtn = document.getElementById('playBtn');
@@ -74,6 +75,10 @@ const flash = document.getElementById('flash');
 const photoStage = document.getElementById('photoStage');
 const photoCount = document.getElementById('photoCount');
 const replayBtn = document.getElementById('replayBtn');
+const fullPhotoGift = document.getElementById('fullPhotoGift');
+const fullPhotoLabel = document.getElementById('fullPhotoLabel');
+const fullPhotoPopup = document.getElementById('fullPhotoPopup');
+const fullPhotoImg = document.getElementById('fullPhotoImg');
 const canvas = document.getElementById('starTextCanvas');
 const ctx = canvas.getContext('2d');
 const photoCache = new Map();
