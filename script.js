@@ -53,6 +53,7 @@ let textParticles = [];
 let textAnimating = false;
 let textStartTime = 0;
 let photoRunId = 0;
+let surpriseFinished = false;
 let cachedFullPhoto = null;
 
 const app = document.getElementById('app');
@@ -219,6 +220,19 @@ function startMusic(){
   playMelodyLoop();
 }
 
+function stopMusic(){
+  if(musicTimer){
+    clearTimeout(musicTimer);
+    musicTimer = null;
+  }
+
+  musicStarted = false;
+
+  if(audioCtx && audioCtx.state !== 'closed'){
+    audioCtx.suspend();
+  }
+}
+
 function updateScore(){
   score.textContent = `Stars ${collected} / ${TARGET_STARS}`;
 }
@@ -277,6 +291,7 @@ function spawnStar(initial=false){
 }
 
 function startGame(){
+  surpriseFinished = false;
   initAudio();
   show('game');
   collected=0;
@@ -582,10 +597,14 @@ async function showFullPhoto(runId = photoRunId){
   sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
 
   setTimeout(() => {
-    if(runId !== photoRunId) return;
-    show('final');
-  }, FULL_PHOTO_DISPLAY_MS);
-}
+  if(runId !== photoRunId) return;
+
+  show('final');
+
+  // Stop background music after surprise complete
+  surpriseFinished = true;
+  stopMusic();
+}, FULL_PHOTO_DISPLAY_MS);
 
 function handleFirstGift(){
   if(firstGiftClicked) return;
