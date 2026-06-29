@@ -472,7 +472,10 @@ async function showPhoto(i, list) {
   setTimeout(()=>showPhoto(i+1,list),5100);
 }
 
-playBtn.addEventListener('click', startGame);
+playBtn.onclick = function () {
+  initAudio();
+  startGame();
+};
 
 let firstGiftClicked = false;
 
