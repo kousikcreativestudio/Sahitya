@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Birthday SAHITYA</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <div id="flash" class="flash"></div>
+
+    <section id="startScreen" class="screen active">
+      <div class="bg gameBg"></div>
+      <div class="startContent">
+        <div class="smallText">Welcome to a</div>
+        <div class="title">Magical Birthday Surprise</div>
+        <div class="decor"></div>
+      </div>
+      <button id="playBtn" class="playBtn">Play Game <span>➜</span></button>
+      <div class="startHint">Collect stars to unlock your surprise ✨</div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="bg gameBg"></div>
+      <div id="gameLayer"></div>
+      <div id="score" class="score">Stars 0 / 20</div>
+      <div class="gameHint">Tap every falling star — stars appear across the full screen</div>
+    </section>
+
+    <section id="giftScreen" class="screen">
+      <div class="bg gameBg dimBg"></div>
+      <div class="giftArea">
+        <div class="giftText">You unlocked a surprise...</div>
+        <button id="firstGift" class="giftButton" aria-label="Open gift box">
+          <img src="assets/gift-box.png" alt="Golden gift box" />
+        </button>
+        <div class="tapGift">Tap the golden gift box</div>
+      </div>
+    </section>
+
+    <section id="wishScreen" class="screen">
+      <div class="bg wishBg move"></div>
+      <canvas id="starTextCanvas"></canvas>
+      <button id="secondGift" class="secondGiftBox" aria-label="Open memories">
+        <img src="assets/gift-box.png" alt="Golden gift box" />
+      </button>
+      <div id="secondLabel" class="secondLabel">Tap to open memories</div>
+    </section>
+
+    <section id="photoScreen" class="screen">
+      <div class="bg wishBg photoBlur"></div>
+      <div id="photoStage"></div>
+      <div id="photoCount" class="photoCount"></div>
+    </section>
+
+    <section id="finalScreen" class="screen">
+      <div class="bg wishBg finalDim"></div>
+      <div class="finalCard">
+        <h1>Happy Birthday</h1>
+        <h2>SAHITYA</h2>
+        <p>May your life shine like these stars ✨</p>
+        <button id="replayBtn" class="replay">Replay Surprise</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
