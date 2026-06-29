@@ -28,12 +28,31 @@ body{display:grid;place-items:center}:root{--gold:#ffd86b;--gold2:#ffb52e;--crea
 .photoBlur{filter:blur(7px) brightness(.76);transform:scale(1.09)}#photoStage{position:absolute;inset:0;display:grid;place-items:center;z-index:8;padding:24px}.photoCard{width:min(83vw,370px);aspect-ratio:3/4;border-radius:30px;padding:10px;background:linear-gradient(135deg,rgba(255,255,255,.88),rgba(255,220,114,.95),rgba(255,255,255,.72));box-shadow:0 0 36px rgba(255,211,88,.58),0 30px 75px rgba(0,0,0,.48);animation:photoShow 5s ease-in-out forwards;position:relative}.photoCard:before{content:"";position:absolute;inset:-30px;border-radius:42px;background:radial-gradient(circle,rgba(255,216,89,.35),transparent 68%);z-index:-1}.photoCard img,.placeholder{width:100%;height:100%;border-radius:22px;display:grid;place-items:center;text-align:center;object-fit:cover;background:linear-gradient(145deg,#17408d,#07142d);color:#fff1b5;font-size:24px;line-height:1.3;padding:20px}.photoCount{position:absolute;left:0;right:0;bottom:max(22px,env(safe-area-inset-bottom));z-index:10;text-align:center;font-family:Arial,sans-serif;color:rgba(255,255,255,.83);font-size:14px}@keyframes photoShow{0%{opacity:0;transform:translateY(140px) rotateX(25deg) rotateY(-20deg) scale(.58);filter:blur(8px)}18%{opacity:1;transform:translateY(0) rotateX(8deg) rotateY(-7deg) scale(1);filter:blur(0)}72%{opacity:1;transform:translateY(-10px) rotateX(0) rotateY(8deg) scale(1.035)}100%{opacity:0;transform:translateY(-105px) rotateX(-17deg) rotateY(18deg) scale(.84)}}
 .finalDim{filter:brightness(.72)}.finalCard{position:absolute;left:50%;top:50%;z-index:8;transform:translate(-50%,-50%);width:min(90vw,410px);padding:28px 18px;border-radius:30px;background:rgba(4,10,29,.48);backdrop-filter:blur(10px);text-align:center;border:1px solid rgba(255,216,101,.3);box-shadow:0 0 42px rgba(255,214,91,.18)}.finalCard h1{font-size:clamp(36px,10vw,58px);line-height:1.08;color:#fff2b2;text-shadow:0 0 22px rgba(255,216,101,.9)}.finalCard h2{margin-top:6px;font-size:clamp(45px,14vw,84px);color:#ffe177;text-shadow:0 0 28px rgba(255,186,38,.95)}.finalCard p{margin:16px 0 24px;font-family:Arial,sans-serif;font-size:17px;color:rgba(255,255,255,.88);line-height:1.45}.replay{border:0;border-radius:999px;padding:14px 28px;background:linear-gradient(135deg,#fff3a8,#ffd662 45%,#ffae28);color:#442900;font-size:18px;font-weight:800;box-shadow:0 0 24px rgba(255,210,83,.72);cursor:pointer}
 
-/* FORCE WISH BACKGROUND FIX */
-#wishScreen .wishBg,
-#photoScreen .wishBg,
-#finalScreen .wishBg {
-  background-image: url("assets/wish-bg.png") !important;
+/* FINAL FORCE FIX - WISH BACKGROUND */
+.wishBg {
+  background-image: url("./assets/wish-bg.png?v=10") !important;
   background-size: cover !important;
   background-position: center center !important;
   background-repeat: no-repeat !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#wishScreen .wishBg,
+#photoScreen .wishBg,
+#finalScreen .wishBg {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+}
+
+#starTextCanvas,
+#wishText,
+#secondGift,
+#secondLabel,
+#photoStage,
+#photoCount,
+.finalCard {
+  position: relative;
+  z-index: 5 !important;
 }
