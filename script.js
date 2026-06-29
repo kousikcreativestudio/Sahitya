@@ -324,7 +324,7 @@ function spawnStar(initial=false){
   star.style.setProperty('--start', initial ? (-Math.random()*h*.95-30)+'px' : '-70px');
   star.style.setProperty('--end', (h + 120 + Math.random()*100)+'px');
   star.style.setProperty('--drift', (Math.random()*90-45)+'px');
-  star.style.animationDuration=(4.1 + Math.random()*2.1)+'s';
+  star.style.animationDuration=(6.5 + Math.random()*2.8)+'s';
 
   const trail=document.createElement('div');
   trail.className='trail';
@@ -357,7 +357,7 @@ function startGame(){
   gameRunning=true;
   clearInterval(spawnTimer);
   for(let i=0;i<15;i++) spawnStar(true);
-  spawnTimer=setInterval(()=>spawnStar(false),250);
+  spawnTimer=setInterval(()=>spawnStar(false),550);
 }
 
 function finishGame(){
