@@ -1,4 +1,4 @@
-const CACHE_VERSION = '75';
+const CACHE_VERSION = '90';
 
 const preloadImages = [
   `./assets/game-bg.jpg?v=${CACHE_VERSION}`,
@@ -46,7 +46,6 @@ let gameRunning = false;
 let spawnTimer = null;
 let firstGiftClicked = false;
 let secondGiftClicked = false;
-let fullGiftClicked = false;
 let audioCtx = null;
 let musicStarted = false;
 let musicTimer = null;
@@ -76,8 +75,6 @@ const flash = document.getElementById('flash');
 const photoStage = document.getElementById('photoStage');
 const photoCount = document.getElementById('photoCount');
 const replayBtn = document.getElementById('replayBtn');
-const fullPhotoGift = document.getElementById('fullPhotoGift');
-const fullPhotoLabel = document.getElementById('fullPhotoLabel');
 const fullPhotoPopup = document.getElementById('fullPhotoPopup');
 const fullPhotoImg = document.getElementById('fullPhotoImg');
 const canvas = document.getElementById('starTextCanvas');
@@ -99,7 +96,7 @@ function initAudio(){
 }
 
 function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
-  if(!audioCtx) return;
+  if(!audioCtx || !freq) return;
   const t = audioCtx.currentTime + delay;
   const o = audioCtx.createOscillator();
   const g = audioCtx.createGain();
@@ -114,9 +111,24 @@ function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
   o.stop(t+dur+.05);
 }
 
-function collectSound(){ tone(900,.1,'sine',.11); tone(1280,.17,'triangle',.085,.05); }
-function boxSound(){ tone(220,.18,'sine',.08); tone(440,.25,'triangle',.1,.08); tone(880,.42,'sine',.09,.18); tone(1320,.5,'triangle',.065,.28); }
-function revealSound(){ tone(392,.35,'sine',.08); tone(523,.42,'triangle',.09,.14); tone(784,.52,'sine',.085,.3); tone(1046,.66,'triangle',.075,.46); }
+function collectSound(){
+  tone(900,.1,'sine',.11);
+  tone(1280,.17,'triangle',.085,.05);
+}
+
+function boxSound(){
+  tone(220,.18,'sine',.08);
+  tone(440,.25,'triangle',.1,.08);
+  tone(880,.42,'sine',.09,.18);
+  tone(1320,.5,'triangle',.065,.28);
+}
+
+function revealSound(){
+  tone(392,.35,'sine',.08);
+  tone(523,.42,'triangle',.09,.14);
+  tone(784,.52,'sine',.085,.3);
+  tone(1046,.66,'triangle',.075,.46);
+}
 
 function photoSound(){
   tone(520,.13,'triangle',.055);
@@ -133,23 +145,41 @@ function finalPhotoSound(){
   tone(1312,.95,'sine',.04,.62);
 }
 
-function photoLightFlash(strong=false){
+function photoLightFlash(target, strong=false){
+  if(!target) return;
   const fx = document.createElement('div');
   fx.className = strong ? 'photoLightFx strong' : 'photoLightFx';
-  app.appendChild(fx);
-  setTimeout(()=>fx.remove(), strong ? 1500 : 900);
+  target.appendChild(fx);
+  setTimeout(() => fx.remove(), strong ? 1500 : 900);
 }
 
 function startMusic(){
-  const notes=[261.63,329.63,392,523.25,392,329.63];
-  let i=0;
-  function loop(){
-    tone(notes[i%notes.length],1.05,'sine',.028);
-    tone(notes[(i+2)%notes.length]*2,.55,'triangle',.014,.13);
-    i++;
+  // Soft birthday melody background music.
+  if(musicTimer) clearTimeout(musicTimer);
+
+  const melody = [
+    [392.00,.32], [392.00,.32], [440.00,.65], [392.00,.65], [523.25,.65], [493.88,1.15], [0,.35],
+    [392.00,.32], [392.00,.32], [440.00,.65], [392.00,.65], [587.33,.65], [523.25,1.15], [0,.35],
+    [392.00,.32], [392.00,.32], [783.99,.65], [659.25,.65], [523.25,.65], [493.88,.65], [440.00,1.25], [0,.35],
+    [698.46,.32], [698.46,.32], [659.25,.65], [523.25,.65], [587.33,.65], [523.25,1.40], [0,1.20]
+  ];
+
+  function playMelodyLoop(){
+    let delay = 0;
+    melody.forEach(note => {
+      const freq = note[0];
+      const dur = note[1];
+      if(freq > 0){
+        tone(freq, dur, 'sine', .034, delay);
+        tone(freq * 2, dur * .72, 'triangle', .013, delay + .04);
+        tone(freq / 2, dur * .9, 'sine', .010, delay + .02);
+      }
+      delay += dur;
+    });
+    musicTimer = setTimeout(playMelodyLoop, delay * 1000);
   }
-  loop();
-  musicTimer = setInterval(loop,1250);
+
+  playMelodyLoop();
 }
 
 function updateScore(){
@@ -188,9 +218,11 @@ function spawnStar(initial=false){
   star.style.setProperty('--end', (h + 120 + Math.random()*100)+'px');
   star.style.setProperty('--drift', (Math.random()*90-45)+'px');
   star.style.animationDuration=(4.1 + Math.random()*2.1)+'s';
+
   const trail=document.createElement('div');
   trail.className='trail';
   star.appendChild(trail);
+
   star.addEventListener('pointerdown', e=>{
     e.preventDefault();
     if(!gameRunning) return;
@@ -202,6 +234,7 @@ function spawnStar(initial=false){
     sparkBurst(r.left+r.width/2,r.top+r.height/2,16);
     if(collected >= TARGET_STARS) finishGame();
   }, {once:true});
+
   star.addEventListener('animationend',()=>star.remove());
   gameLayer.appendChild(star);
 }
@@ -266,10 +299,13 @@ function textPoints(w,h){
   c.fillStyle='white';
   c.textAlign='center';
   c.textBaseline='middle';
+
   c.font = `700 ${Math.min(w*.09,38)}px Georgia`;
   c.fillText('Happy Birthday', w/2, h*.125);
+
   c.font = `700 ${Math.min(w*.145,60)}px Georgia`;
   c.fillText('SAHITYA', w/2, h*.205);
+
   const data=c.getImageData(0,0,w,h).data;
   const pts=[];
   const gap=Math.max(3,Math.floor(w/150));
@@ -288,6 +324,7 @@ function drawStarParticle(x,y,r,a,cross){
   ctx.globalAlpha = a;
   ctx.shadowColor='#ffd55d';
   ctx.shadowBlur=14;
+
   if(cross){
     ctx.strokeStyle='rgba(255,242,188,.96)';
     ctx.lineWidth=Math.max(.65,r*.24);
@@ -298,6 +335,7 @@ function drawStarParticle(x,y,r,a,cross){
     ctx.lineTo(x,y+r*1.4);
     ctx.stroke();
   }
+
   ctx.beginPath();
   ctx.fillStyle='rgba(255,238,170,.98)';
   ctx.arc(x,y,r*.55,0,Math.PI*2);
@@ -311,6 +349,7 @@ function startStarText(){
   const w=canvas.clientWidth;
   const h=canvas.clientHeight;
   const pts=textPoints(w,h);
+
   pts.forEach(p=>{
     textParticles.push({
       sx:Math.random()*w,
@@ -325,6 +364,7 @@ function startStarText(){
       cross:Math.random()>.58
     });
   });
+
   textStartTime = performance.now();
   textAnimating=true;
   animateStarText();
@@ -335,6 +375,7 @@ function animateStarText(now=performance.now()){
   const w=canvas.clientWidth;
   const h=canvas.clientHeight;
   ctx.clearRect(0,0,w,h);
+
   let completeCount=0;
   for(const p of textParticles){
     const local=(now-textStartTime-p.delay)/TEXT_FORM_MS;
@@ -344,16 +385,19 @@ function animateStarText(now=performance.now()){
     p.y=p.sy+(p.ty-p.sy)*e;
     p.tw += .08;
     if(t>=1) completeCount++;
+
     const pulse=.76+(Math.sin(p.tw)+1)*.35;
     const alpha=t<1 ? .92 : .68+(Math.sin(p.tw*1.25)+1)*.16;
     drawStarParticle(p.x,p.y,p.size*pulse,alpha,p.cross && t>.88);
   }
+
   if(completeCount===textParticles.length){
     for(let i=0;i<14;i++){
       const p=textParticles[Math.floor(Math.random()*textParticles.length)];
       if(p) drawStarParticle(p.tx,p.ty,p.size*1.8,.9,true);
     }
   }
+
   requestAnimationFrame(animateStarText);
 }
 
@@ -363,9 +407,11 @@ function openWish(){
   secondGift.classList.remove('show','open');
   secondLabel.classList.remove('show');
   secondGiftClicked = false;
+
   textAnimating=false;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   startStarText();
+
   setTimeout(()=>revealSound(),900);
   setTimeout(()=>screens.wish.classList.add('blur'),BLUR_BEFORE_GIFT_MS);
   setTimeout(()=>{
@@ -380,6 +426,7 @@ function preloadPhoto(src){
       resolve(photoCache.get(src));
       return;
     }
+
     const img = new Image();
     img.onload = () => {
       photoCache.set(src,img);
@@ -421,16 +468,20 @@ async function startPhotos(){
   const runId = photoRunId;
   photoStage.innerHTML = '<div class="placeholder">Preparing memories ✨</div>';
   photoCount.textContent = '';
+
   await preloadAllPhotos();
   if(runId !== photoRunId) return;
-  const list = photos.length ? photos : ['__placeholder__'];
-  showPhoto(0, list, runId);
+
+  showPhoto(0, photos, runId);
 }
 
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
-  if(i>=list.length){
-    showFullPhoto();
+
+  if(i >= list.length){
+    photoStage.innerHTML = '';
+    photoCount.textContent = '';
+    setTimeout(() => showFullPhoto(runId), 650);
     return;
   }
 
@@ -438,49 +489,40 @@ async function showPhoto(i, list, runId = photoRunId){
   const card=document.createElement('div');
   card.className='photoCard';
 
-  if(list[i] === '__placeholder__'){
+  const loadedImg = await preloadPhoto(list[i]);
+  if(runId !== photoRunId) return;
+
+  if(loadedImg){
+    const img=document.createElement('img');
+    img.src=loadedImg.src;
+    img.alt='Birthday memory photo';
+    card.appendChild(img);
+  } else {
     const ph=document.createElement('div');
     ph.className='placeholder';
-    ph.innerHTML='Add your selected photos later ✨';
+    ph.innerHTML=`Photo ${i+1}<br>Upload ${list[i]}`;
     card.appendChild(ph);
-    photoCount.textContent='';
-  } else {
-    const loadedImg = await preloadPhoto(list[i]);
-    if(runId !== photoRunId) return;
-    if(loadedImg){
-      const img=document.createElement('img');
-      img.src=loadedImg.src;
-      img.alt='Birthday memory photo';
-      card.appendChild(img);
-    } else {
-      const ph=document.createElement('div');
-      ph.className='placeholder';
-      ph.innerHTML=`Photo ${i+1}<br>Upload ${list[i]}`;
-      card.appendChild(ph);
-    }
-    photoCount.textContent=`${i+1} / ${list.length}`;
   }
 
+  photoCount.textContent=`${i+1} / ${list.length}`;
   photoSound();
-  photoLightFlash(false);
   photoStage.appendChild(card);
+  photoLightFlash(card, false);
   sparkBurst(app.clientWidth/2,app.clientHeight/2,34);
+
   setTimeout(()=>showPhoto(i+1,list,runId),PHOTO_DURATION_MS);
 }
 
+async function showFullPhoto(runId = photoRunId){
+  if(runId !== photoRunId) return;
 
-async function showFullPhoto(){
   show('finalPhoto');
-
-  fullPhotoGift.style.display = 'none';
-  fullPhotoLabel.style.display = 'none';
   fullPhotoPopup.classList.remove('show');
   fullPhotoImg.removeAttribute('src');
-
-  finalPhotoSound();
-  photoLightFlash(true);
+  fullPhotoImg.alt = 'Final Photo';
 
   const loadedImg = await loadFirstAvailablePhoto(fullPhotoSources);
+  if(runId !== photoRunId) return;
 
   if(loadedImg){
     fullPhotoImg.src = loadedImg.src;
@@ -488,14 +530,18 @@ async function showFullPhoto(){
     fullPhotoImg.alt = 'Upload photos/fullphoto.jpg';
   }
 
-  setTimeout(function(){
+  finalPhotoSound();
+  setTimeout(() => {
+    if(runId !== photoRunId) return;
     fullPhotoPopup.classList.add('show');
+    photoLightFlash(fullPhotoPopup, true);
     sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
   }, 350);
 
-  setTimeout(function(){
+  setTimeout(() => {
+    if(runId !== photoRunId) return;
     show('final');
-  }, 8500);
+  }, FULL_PHOTO_DISPLAY_MS);
 }
 
 function handleFirstGift(){
@@ -505,9 +551,11 @@ function handleFirstGift(){
   boxSound();
   firstGift.classList.add('open');
   flashOpen();
+
   setTimeout(() => {
     firstGift.style.visibility = 'hidden';
     openWish();
+
     setTimeout(() => {
       firstGift.classList.remove('open');
       firstGift.style.visibility = 'visible';
@@ -523,6 +571,7 @@ function handleSecondGift(){
   boxSound();
   secondGift.classList.add('open');
   flashOpen();
+
   setTimeout(() => {
     secondGift.classList.remove('open');
     secondGiftClicked = false;
@@ -533,6 +582,7 @@ function handleSecondGift(){
 function replay(){
   textAnimating=false;
   photoRunId++;
+  clearInterval(spawnTimer);
   photoStage.innerHTML='';
   photoCount.textContent='';
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -541,18 +591,31 @@ function replay(){
   secondLabel.classList.remove('show');
   firstGift.classList.remove('open');
   firstGift.style.visibility = 'visible';
-  fullPhotoGift.classList.remove('hide','open');
-  fullPhotoLabel.classList.remove('hide');
   fullPhotoPopup.classList.remove('show');
   fullPhotoImg.removeAttribute('src');
   firstGiftClicked=false;
   secondGiftClicked=false;
-  fullGiftClicked=false;
   show('start');
 }
 
-playBtn.addEventListener('click', e=>{ e.preventDefault(); startGame(); });
-playBtn.addEventListener('touchend', e=>{ e.preventDefault(); startGame(); }, {passive:false});
-firstGift.addEventListener('click', e=>{ e.preventDefault(); handleFirstGift(); });
-secondGift.addEventListener('click', e=>{ e.preventDefault(); handleSecondGift(); });
-replayBtn.addEventListener('click', e=>{ e.preventDefault(); replay(); });
+function bindTap(el, handler){
+  if(!el) return;
+  let lastTap = 0;
+  const run = e => {
+    if(e){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const now = Date.now();
+    if(now - lastTap < 450) return;
+    lastTap = now;
+    handler(e);
+  };
+  el.addEventListener('pointerup', run);
+  el.addEventListener('click', run);
+}
+
+bindTap(playBtn, startGame);
+bindTap(firstGift, handleFirstGift);
+bindTap(secondGift, handleSecondGift);
+bindTap(replayBtn, replay);
