@@ -1,7 +1,9 @@
+const CACHE_VERSION = '75';
+
 const preloadImages = [
-  './assets/game-bg.jpg?v=50',
-  './assets/wish-bg.png?v=50',
-  './assets/gift-box.png?v=50'
+  `./assets/game-bg.jpg?v=${CACHE_VERSION}`,
+  `./assets/wish-bg.png?v=${CACHE_VERSION}`,
+  `./assets/gift-box.png?v=${CACHE_VERSION}`
 ];
 
 preloadImages.forEach(src => {
@@ -24,8 +26,6 @@ const photos = [
   'photos/photo12.jpg'
 ];
 
-// After all 12 photos, this one opens full-screen.
-// Upload it inside photos folder as fullphoto.jpg.
 const fullPhotoSources = [
   'photos/fullphoto.jpg',
   'photos/fullphoto.jpg.jpg',
@@ -39,13 +39,14 @@ const TEXT_FORM_MS = 1250;
 const BLUR_BEFORE_GIFT_MS = 6400;
 const SECOND_GIFT_DELAY_MS = 7300;
 const PHOTO_DURATION_MS = 5200;
-const CACHE_VERSION = '60';
+const FULL_PHOTO_DISPLAY_MS = 9000;
 
 let collected = 0;
 let gameRunning = false;
 let spawnTimer = null;
 let firstGiftClicked = false;
 let secondGiftClicked = false;
+let fullGiftClicked = false;
 let audioCtx = null;
 let musicStarted = false;
 let musicTimer = null;
@@ -62,7 +63,7 @@ const screens = {
   wish: document.getElementById('wishScreen'),
   photo: document.getElementById('photoScreen'),
   finalPhoto: document.getElementById('fullPhotoScreen'),
-final: document.getElementById('finalScreen')
+  final: document.getElementById('finalScreen')
 };
 
 const playBtn = document.getElementById('playBtn');
@@ -84,8 +85,8 @@ const ctx = canvas.getContext('2d');
 const photoCache = new Map();
 
 function show(name){
-  Object.values(screens).forEach(s => s.classList.remove('active'));
-  screens[name].classList.add('active');
+  Object.values(screens).forEach(s => s && s.classList.remove('active'));
+  if(screens[name]) screens[name].classList.add('active');
 }
 
 function initAudio(){
@@ -116,27 +117,27 @@ function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
 function collectSound(){ tone(900,.1,'sine',.11); tone(1280,.17,'triangle',.085,.05); }
 function boxSound(){ tone(220,.18,'sine',.08); tone(440,.25,'triangle',.1,.08); tone(880,.42,'sine',.09,.18); tone(1320,.5,'triangle',.065,.28); }
 function revealSound(){ tone(392,.35,'sine',.08); tone(523,.42,'triangle',.09,.14); tone(784,.52,'sine',.085,.3); tone(1046,.66,'triangle',.075,.46); }
+
 function photoSound(){
-  // Softer magical whoosh + sparkle when each photo changes.
-  tone(520,.13,'triangle',.06);
-  tone(820,.18,'sine',.065,.05);
-  tone(1180,.24,'triangle',.055,.12);
-  tone(1560,.22,'sine',.035,.2);
+  tone(520,.13,'triangle',.055);
+  tone(820,.18,'sine',.06,.05);
+  tone(1180,.24,'triangle',.05,.12);
+  tone(1560,.22,'sine',.03,.2);
 }
 
 function finalPhotoSound(){
-  // Bigger cinematic reveal for the final full-screen photo.
-  tone(196,.28,'sine',.08);
-  tone(392,.38,'triangle',.08,.08);
-  tone(784,.55,'sine',.075,.24);
-  tone(1175,.65,'triangle',.055,.42);
+  tone(164,.35,'sine',.09);
+  tone(328,.48,'triangle',.09,.10);
+  tone(656,.70,'sine',.08,.28);
+  tone(984,.85,'triangle',.06,.48);
+  tone(1312,.95,'sine',.04,.62);
 }
 
 function photoLightFlash(strong=false){
   const fx = document.createElement('div');
   fx.className = strong ? 'photoLightFx strong' : 'photoLightFx';
   app.appendChild(fx);
-  setTimeout(()=>fx.remove(), strong ? 1400 : 900);
+  setTimeout(()=>fx.remove(), strong ? 1500 : 900);
 }
 
 function startMusic(){
@@ -429,7 +430,7 @@ async function startPhotos(){
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
   if(i>=list.length){
-    showFullPhoto();
+    openFullPhotoGift();
     return;
   }
 
@@ -467,39 +468,42 @@ async function showPhoto(i, list, runId = photoRunId){
   setTimeout(()=>showPhoto(i+1,list,runId),PHOTO_DURATION_MS);
 }
 
+function openFullPhotoGift(){
+  show('finalPhoto');
+  fullGiftClicked = false;
+  fullPhotoGift.classList.remove('hide','open');
+  fullPhotoLabel.classList.remove('hide');
+  fullPhotoPopup.classList.remove('show');
+  fullPhotoImg.removeAttribute('src');
+}
 
-async function showFullPhoto(){
-  photoStage.innerHTML = '<div class="placeholder">Opening final memory ✨</div>';
-  photoCount.textContent = '';
+async function handleFullPhotoGift(){
+  if(fullGiftClicked) return;
+  fullGiftClicked = true;
+  initAudio();
+  boxSound();
+  flashOpen();
+
+  fullPhotoGift.classList.add('hide');
+  fullPhotoLabel.classList.add('hide');
 
   const loadedImg = await loadFirstAvailablePhoto(fullPhotoSources);
-  photoStage.innerHTML = '';
-  photoCount.textContent = '';
-  finalPhotoSound();
-  photoLightFlash(true);
-
-  const wrap = document.createElement('div');
-  wrap.className = 'fullPhotoReveal';
 
   if(loadedImg){
-    const img = document.createElement('img');
-    img.src = loadedImg.src;
-    img.alt = 'Final birthday photo';
-    wrap.appendChild(img);
+    fullPhotoImg.src = loadedImg.src;
   } else {
-    const ph = document.createElement('div');
-    ph.className = 'fullPhotoPlaceholder';
-    ph.innerHTML = 'Upload photos/fullphoto.jpg';
-    wrap.appendChild(ph);
+    fullPhotoImg.src = '';
+    fullPhotoImg.alt = 'Upload photos/fullphoto.jpg';
   }
 
-  const glow = document.createElement('div');
-  glow.className = 'fullPhotoGlow';
-  photoStage.appendChild(glow);
-  photoStage.appendChild(wrap);
-  sparkBurst(app.clientWidth/2, app.clientHeight*.55, 55);
+  setTimeout(()=>{
+    finalPhotoSound();
+    photoLightFlash(true);
+    fullPhotoPopup.classList.add('show');
+    sparkBurst(app.clientWidth/2, app.clientHeight*.52, 70);
+  }, 420);
 
-  setTimeout(()=>show('final'), 7200);
+  setTimeout(()=>show('final'), FULL_PHOTO_DISPLAY_MS);
 }
 
 function handleFirstGift(){
@@ -545,8 +549,13 @@ function replay(){
   secondLabel.classList.remove('show');
   firstGift.classList.remove('open');
   firstGift.style.visibility = 'visible';
+  fullPhotoGift.classList.remove('hide','open');
+  fullPhotoLabel.classList.remove('hide');
+  fullPhotoPopup.classList.remove('show');
+  fullPhotoImg.removeAttribute('src');
   firstGiftClicked=false;
   secondGiftClicked=false;
+  fullGiftClicked=false;
   show('start');
 }
 
@@ -554,4 +563,5 @@ playBtn.addEventListener('click', e=>{ e.preventDefault(); startGame(); });
 playBtn.addEventListener('touchend', e=>{ e.preventDefault(); startGame(); }, {passive:false});
 firstGift.addEventListener('click', e=>{ e.preventDefault(); handleFirstGift(); });
 secondGift.addEventListener('click', e=>{ e.preventDefault(); handleSecondGift(); });
+fullPhotoGift.addEventListener('click', e=>{ e.preventDefault(); handleFullPhotoGift(); });
 replayBtn.addEventListener('click', e=>{ e.preventDefault(); replay(); });
