@@ -512,11 +512,51 @@ secondGift.addEventListener('click', ()=>{
   },780);
 });
 
-replayBtn.addEventListener('click', ()=>{
-  textAnimating=false;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+playBtn.onclick = function () {
+  initAudio();
+  startGame();
+};
+
+firstGift.onclick = function () {
+  if (firstGiftClicked) return;
+  firstGiftClicked = true;
+
+  initAudio();
+  boxSound();
+  firstGift.classList.add('open');
+  flashOpen();
+
+  setTimeout(function () {
+    firstGift.style.visibility = 'hidden';
+    openWish();
+
+    setTimeout(function () {
+      firstGift.classList.remove('open');
+      firstGift.style.visibility = 'visible';
+      firstGiftClicked = false;
+    }, 1200);
+  }, 850);
+};
+
+secondGift.onclick = function () {
+  initAudio();
+  boxSound();
+  secondGift.classList.add('open');
+  flashOpen();
+
+  setTimeout(function () {
+    secondGift.classList.remove('open');
+    startPhotos();
+  }, 780);
+};
+
+replayBtn.onclick = function () {
+  textAnimating = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   screens.wish.classList.remove('blur');
-  secondGift.classList.remove('show','open');
+  secondGift.classList.remove('show', 'open');
   secondLabel.classList.remove('show');
+
   show('start');
-});
+};
