@@ -430,7 +430,7 @@ async function startPhotos(){
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
   if(i>=list.length){
-    openFullPhotoGift();
+    showFullPhoto();
     return;
   }
 
@@ -555,5 +555,4 @@ playBtn.addEventListener('click', e=>{ e.preventDefault(); startGame(); });
 playBtn.addEventListener('touchend', e=>{ e.preventDefault(); startGame(); }, {passive:false});
 firstGift.addEventListener('click', e=>{ e.preventDefault(); handleFirstGift(); });
 secondGift.addEventListener('click', e=>{ e.preventDefault(); handleSecondGift(); });
-fullPhotoGift.addEventListener('click', e=>{ e.preventDefault(); handleFullPhotoGift(); });
 replayBtn.addEventListener('click', e=>{ e.preventDefault(); replay(); });
