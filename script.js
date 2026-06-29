@@ -1,7 +1,7 @@
 const preloadImages = [
-  './assets/game-bg.jpg?v=21',
-  './assets/wish-bg.png?v=21',
-  './assets/gift-box.png?v=21'
+  './assets/game-bg.jpg?v=50',
+  './assets/wish-bg.png?v=50',
+  './assets/gift-box.png?v=50'
 ];
 
 preloadImages.forEach(src => {
@@ -9,8 +9,6 @@ preloadImages.forEach(src => {
   img.src = src;
 });
 
-// You said total photos = 12.
-// Upload your photos inside the photos folder with these exact names.
 const photos = [
   'photos/photo1.jpg',
   'photos/photo2.jpg',
@@ -26,46 +24,25 @@ const photos = [
   'photos/photo12.jpg'
 ];
 
-const photoCache = new Map();
-
-function preloadPhoto(src) {
-  return new Promise(resolve => {
-    if (photoCache.has(src)) {
-      resolve(photoCache.get(src));
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      photoCache.set(src, img);
-      resolve(img);
-    };
-    img.onerror = () => {
-      resolve(null);
-    };
-    img.src = src + "?v=20";
-  });
-}
-
-function preloadAllPhotos() {
-  return Promise.all(photos.map(src => preloadPhoto(src)));
-}
-
 const TARGET_STARS = 20;
 const TEXT_FORM_MS = 1250;
 const BLUR_BEFORE_GIFT_MS = 6400;
 const SECOND_GIFT_DELAY_MS = 7300;
+const PHOTO_DURATION_MS = 5200;
+const CACHE_VERSION = '50';
 
 let collected = 0;
 let gameRunning = false;
 let spawnTimer = null;
 let firstGiftClicked = false;
+let secondGiftClicked = false;
 let audioCtx = null;
 let musicStarted = false;
 let musicTimer = null;
 let textParticles = [];
 let textAnimating = false;
 let textStartTime = 0;
+let photoRunId = 0;
 
 const app = document.getElementById('app');
 const screens = {
@@ -89,6 +66,7 @@ const photoCount = document.getElementById('photoCount');
 const replayBtn = document.getElementById('replayBtn');
 const canvas = document.getElementById('starTextCanvas');
 const ctx = canvas.getContext('2d');
+const photoCache = new Map();
 
 function show(name){
   Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -120,29 +98,10 @@ function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
   o.stop(t+dur+.05);
 }
 
-function collectSound(){
-  tone(900,.1,'sine',.11);
-  tone(1280,.17,'triangle',.085,.05);
-}
-
-function boxSound(){
-  tone(220,.18,'sine',.08);
-  tone(440,.25,'triangle',.1,.08);
-  tone(880,.42,'sine',.09,.18);
-  tone(1320,.5,'triangle',.065,.28);
-}
-
-function revealSound(){
-  tone(392,.35,'sine',.08);
-  tone(523,.42,'triangle',.09,.14);
-  tone(784,.52,'sine',.085,.3);
-  tone(1046,.66,'triangle',.075,.46);
-}
-
-function photoSound(){
-  tone(640,.16,'triangle',.08);
-  tone(980,.24,'sine',.07,.08);
-}
+function collectSound(){ tone(900,.1,'sine',.11); tone(1280,.17,'triangle',.085,.05); }
+function boxSound(){ tone(220,.18,'sine',.08); tone(440,.25,'triangle',.1,.08); tone(880,.42,'sine',.09,.18); tone(1320,.5,'triangle',.065,.28); }
+function revealSound(){ tone(392,.35,'sine',.08); tone(523,.42,'triangle',.09,.14); tone(784,.52,'sine',.085,.3); tone(1046,.66,'triangle',.075,.46); }
+function photoSound(){ tone(640,.16,'triangle',.08); tone(980,.24,'sine',.07,.08); }
 
 function startMusic(){
   const notes=[261.63,329.63,392,523.25,392,329.63];
@@ -218,6 +177,7 @@ function startGame(){
   gameLayer.innerHTML='';
   makeAmbientStars();
   gameRunning=true;
+  clearInterval(spawnTimer);
   for(let i=0;i<15;i++) spawnStar(true);
   spawnTimer=setInterval(()=>spawnStar(false),250);
 }
@@ -227,11 +187,11 @@ function finishGame(){
   clearInterval(spawnTimer);
   document.querySelectorAll('.fallStar').forEach(s=>s.remove());
   setTimeout(() => {
-  firstGift.classList.remove('open');
-  firstGift.style.visibility = 'visible';
-  firstGiftClicked = false;
-  show('gift');
-}, 550);
+    firstGift.classList.remove('open');
+    firstGift.style.visibility = 'visible';
+    firstGiftClicked = false;
+    show('gift');
+  }, 550);
 }
 
 function sparkBurst(x,y,n=12){
@@ -269,13 +229,10 @@ function textPoints(w,h){
   c.fillStyle='white';
   c.textAlign='center';
   c.textBaseline='middle';
-
   c.font = `700 ${Math.min(w*.09,38)}px Georgia`;
   c.fillText('Happy Birthday', w/2, h*.125);
-
   c.font = `700 ${Math.min(w*.145,60)}px Georgia`;
   c.fillText('SAHITYA', w/2, h*.205);
-
   const data=c.getImageData(0,0,w,h).data;
   const pts=[];
   const gap=Math.max(3,Math.floor(w/150));
@@ -287,16 +244,13 @@ function textPoints(w,h){
   return pts;
 }
 
-function easeOutCubic(t){
-  return 1 - Math.pow(1-t,3);
-}
+function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
 
 function drawStarParticle(x,y,r,a,cross){
   ctx.save();
   ctx.globalAlpha = a;
   ctx.shadowColor='#ffd55d';
   ctx.shadowBlur=14;
-
   if(cross){
     ctx.strokeStyle='rgba(255,242,188,.96)';
     ctx.lineWidth=Math.max(.65,r*.24);
@@ -307,7 +261,6 @@ function drawStarParticle(x,y,r,a,cross){
     ctx.lineTo(x,y+r*1.4);
     ctx.stroke();
   }
-
   ctx.beginPath();
   ctx.fillStyle='rgba(255,238,170,.98)';
   ctx.arc(x,y,r*.55,0,Math.PI*2);
@@ -321,7 +274,6 @@ function startStarText(){
   const w=canvas.clientWidth;
   const h=canvas.clientHeight;
   const pts=textPoints(w,h);
-
   pts.forEach(p=>{
     textParticles.push({
       sx:Math.random()*w,
@@ -336,7 +288,6 @@ function startStarText(){
       cross:Math.random()>.58
     });
   });
-
   textStartTime = performance.now();
   textAnimating=true;
   animateStarText();
@@ -347,7 +298,6 @@ function animateStarText(now=performance.now()){
   const w=canvas.clientWidth;
   const h=canvas.clientHeight;
   ctx.clearRect(0,0,w,h);
-
   let completeCount=0;
   for(const p of textParticles){
     const local=(now-textStartTime-p.delay)/TEXT_FORM_MS;
@@ -357,19 +307,16 @@ function animateStarText(now=performance.now()){
     p.y=p.sy+(p.ty-p.sy)*e;
     p.tw += .08;
     if(t>=1) completeCount++;
-
     const pulse=.76+(Math.sin(p.tw)+1)*.35;
     const alpha=t<1 ? .92 : .68+(Math.sin(p.tw*1.25)+1)*.16;
     drawStarParticle(p.x,p.y,p.size*pulse,alpha,p.cross && t>.88);
   }
-
   if(completeCount===textParticles.length){
     for(let i=0;i<14;i++){
       const p=textParticles[Math.floor(Math.random()*textParticles.length)];
       if(p) drawStarParticle(p.tx,p.ty,p.size*1.8,.9,true);
     }
   }
-
   requestAnimationFrame(animateStarText);
 }
 
@@ -378,185 +325,151 @@ function openWish(){
   screens.wish.classList.remove('blur');
   secondGift.classList.remove('show','open');
   secondLabel.classList.remove('show');
-
+  secondGiftClicked = false;
   textAnimating=false;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   startStarText();
-
   setTimeout(()=>revealSound(),900);
-
-  setTimeout(()=>{
-    screens.wish.classList.add('blur');
-  },BLUR_BEFORE_GIFT_MS);
-
+  setTimeout(()=>screens.wish.classList.add('blur'),BLUR_BEFORE_GIFT_MS);
   setTimeout(()=>{
     secondGift.classList.add('show');
     secondLabel.classList.add('show');
   },SECOND_GIFT_DELAY_MS);
 }
 
-async function startPhotos(){
-  show('photo');
-  photoStage.innerHTML = '';
-  photoCount.textContent = '';
-
-  // Preload first, then start photo popup
-  await preloadAllPhotos();
-
-  const list = photos.length ? photos : ['__placeholder__'];
-  showPhoto(0, list);
+function preloadPhoto(src){
+  return new Promise(resolve => {
+    if(photoCache.has(src)){
+      resolve(photoCache.get(src));
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      photoCache.set(src,img);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if(src.endsWith('.jpg') && !src.endsWith('.jpg.jpg')){
+        const fallback = src + '.jpg';
+        const img2 = new Image();
+        img2.onload = () => {
+          photoCache.set(src,img2);
+          resolve(img2);
+        };
+        img2.onerror = () => resolve(null);
+        img2.src = fallback + `?v=${CACHE_VERSION}`;
+      } else {
+        resolve(null);
+      }
+    };
+    img.src = src + `?v=${CACHE_VERSION}`;
+  });
 }
 
-async function showPhoto(i, list) {
-  if (i >= list.length) {
+function preloadAllPhotos(){
+  return Promise.all(photos.map(src => preloadPhoto(src)));
+}
+
+async function startPhotos(){
+  show('photo');
+  photoRunId++;
+  const runId = photoRunId;
+  photoStage.innerHTML = '<div class="placeholder">Preparing memories ✨</div>';
+  photoCount.textContent = '';
+  await preloadAllPhotos();
+  if(runId !== photoRunId) return;
+  const list = photos.length ? photos : ['__placeholder__'];
+  showPhoto(0, list, runId);
+}
+
+async function showPhoto(i, list, runId = photoRunId){
+  if(runId !== photoRunId) return;
+  if(i>=list.length){
     show('final');
     return;
   }
 
-  photoStage.innerHTML = '';
-  photoSound();
-
-  const card = document.createElement('div');
-  card.className = 'photoCard';
-
-  if (list[i] === '__placeholder__') {
-    const ph = document.createElement('div');
-    ph.className = 'placeholder';
-    ph.innerHTML = 'Add your selected photos later ✨';
-    card.appendChild(ph);
-    photoCount.textContent = '';
-  } else {
-    const loadedImg = await preloadPhoto(list[i]);
-
-    if (loadedImg) {
-      const img = document.createElement('img');
-      img.src = loadedImg.src;
-      img.alt = 'Birthday memory photo';
-      card.appendChild(img);
-    } else {
-      const ph = document.createElement('div');
-      ph.className = 'placeholder';
-      ph.innerHTML = 'Photo not found<br>' + list[i];
-      card.appendChild(ph);
-    }
-
-    photoCount.textContent = `${i + 1} / ${list.length}`;
-  }
-
-  photoStage.appendChild(card);
-  sparkBurst(app.clientWidth / 2, app.clientHeight / 2, 26);
-
-  setTimeout(() => {
-    showPhoto(i + 1, list);
-  }, 5200);
-}
-
-  photoSound();
   photoStage.innerHTML='';
   const card=document.createElement('div');
   card.className='photoCard';
 
-  const img=document.createElement('img');
-  img.src=list[i];
-  img.alt='Birthday memory photo';
-  img.onerror=()=>{
-    img.replaceWith(Object.assign(document.createElement('div'),{
-      className:'placeholder',
-      innerHTML:`Photo ${i+1}<br>Upload ${list[i]}`
-    }));
-  };
-  card.appendChild(img);
-  photoCount.textContent=`${i+1} / ${list.length}`;
+  if(list[i] === '__placeholder__'){
+    const ph=document.createElement('div');
+    ph.className='placeholder';
+    ph.innerHTML='Add your selected photos later ✨';
+    card.appendChild(ph);
+    photoCount.textContent='';
+  } else {
+    const loadedImg = await preloadPhoto(list[i]);
+    if(runId !== photoRunId) return;
+    if(loadedImg){
+      const img=document.createElement('img');
+      img.src=loadedImg.src;
+      img.alt='Birthday memory photo';
+      card.appendChild(img);
+    } else {
+      const ph=document.createElement('div');
+      ph.className='placeholder';
+      ph.innerHTML=`Photo ${i+1}<br>Upload ${list[i]}`;
+      card.appendChild(ph);
+    }
+    photoCount.textContent=`${i+1} / ${list.length}`;
+  }
 
+  photoSound();
   photoStage.appendChild(card);
   sparkBurst(app.clientWidth/2,app.clientHeight/2,26);
-  setTimeout(()=>showPhoto(i+1,list),5100);
+  setTimeout(()=>showPhoto(i+1,list,runId),PHOTO_DURATION_MS);
 }
 
-playBtn.onclick = function () {
-  initAudio();
-  startGame();
-};
-
-let firstGiftClicked = false;
-
-firstGift.addEventListener('click', () => {
-  if (firstGiftClicked) return;
+function handleFirstGift(){
+  if(firstGiftClicked) return;
   firstGiftClicked = true;
-
   initAudio();
   boxSound();
   firstGift.classList.add('open');
   flashOpen();
-
   setTimeout(() => {
     firstGift.style.visibility = 'hidden';
     openWish();
-
     setTimeout(() => {
       firstGift.classList.remove('open');
       firstGift.style.visibility = 'visible';
       firstGiftClicked = false;
     }, 1200);
   }, 850);
-});
+}
 
-secondGift.addEventListener('click', ()=>{
+function handleSecondGift(){
+  if(secondGiftClicked) return;
+  secondGiftClicked = true;
   initAudio();
   boxSound();
   secondGift.classList.add('open');
   flashOpen();
-  setTimeout(()=>{
+  setTimeout(() => {
     secondGift.classList.remove('open');
-    startPhotos();
-  },780);
-});
-
-playBtn.onclick = function () {
-  initAudio();
-  startGame();
-};
-
-firstGift.onclick = function () {
-  if (firstGiftClicked) return;
-  firstGiftClicked = true;
-
-  initAudio();
-  boxSound();
-  firstGift.classList.add('open');
-  flashOpen();
-
-  setTimeout(function () {
-    firstGift.style.visibility = 'hidden';
-    openWish();
-
-    setTimeout(function () {
-      firstGift.classList.remove('open');
-      firstGift.style.visibility = 'visible';
-      firstGiftClicked = false;
-    }, 1200);
-  }, 850);
-};
-
-secondGift.onclick = function () {
-  initAudio();
-  boxSound();
-  secondGift.classList.add('open');
-  flashOpen();
-
-  setTimeout(function () {
-    secondGift.classList.remove('open');
+    secondGiftClicked = false;
     startPhotos();
   }, 780);
-};
+}
 
-replayBtn.onclick = function () {
-  textAnimating = false;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+function replay(){
+  textAnimating=false;
+  photoRunId++;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   screens.wish.classList.remove('blur');
-  secondGift.classList.remove('show', 'open');
+  secondGift.classList.remove('show','open');
   secondLabel.classList.remove('show');
-
+  firstGift.classList.remove('open');
+  firstGift.style.visibility = 'visible';
+  firstGiftClicked=false;
+  secondGiftClicked=false;
   show('start');
-};
+}
+
+playBtn.addEventListener('click', e=>{ e.preventDefault(); startGame(); });
+playBtn.addEventListener('touchend', e=>{ e.preventDefault(); startGame(); }, {passive:false});
+firstGift.addEventListener('click', e=>{ e.preventDefault(); handleFirstGift(); });
+secondGift.addEventListener('click', e=>{ e.preventDefault(); handleSecondGift(); });
+replayBtn.addEventListener('click', e=>{ e.preventDefault(); replay(); });
