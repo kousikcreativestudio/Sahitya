@@ -225,7 +225,12 @@ function finishGame(){
   gameRunning=false;
   clearInterval(spawnTimer);
   document.querySelectorAll('.fallStar').forEach(s=>s.remove());
-  setTimeout(()=>show('gift'),550);
+  setTimeout(() => {
+  firstGift.classList.remove('open');
+  firstGift.style.visibility = 'visible';
+  firstGiftClicked = false;
+  show('gift');
+}, 550);
 }
 
 function sparkBurst(x,y,n=12){
@@ -469,15 +474,27 @@ async function showPhoto(i, list) {
 
 playBtn.addEventListener('click', startGame);
 
-firstGift.addEventListener('click', ()=>{
+let firstGiftClicked = false;
+
+firstGift.addEventListener('click', () => {
+  if (firstGiftClicked) return;
+  firstGiftClicked = true;
+
   initAudio();
   boxSound();
   firstGift.classList.add('open');
   flashOpen();
-  setTimeout(()=>{
-    firstGift.classList.remove('open');
+
+  setTimeout(() => {
+    firstGift.style.visibility = 'hidden';
     openWish();
-  },850);
+
+    setTimeout(() => {
+      firstGift.classList.remove('open');
+      firstGift.style.visibility = 'visible';
+      firstGiftClicked = false;
+    }, 1200);
+  }, 850);
 });
 
 secondGift.addEventListener('click', ()=>{
