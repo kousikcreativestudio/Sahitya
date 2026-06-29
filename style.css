@@ -779,3 +779,47 @@ body{
   }
 }
 
+/* WISH SCREEN GOLD QUOTE TEXT */
+.wishQuote{
+  position:absolute;
+  left:7%;
+  right:7%;
+  bottom:11%;
+  z-index:9;
+  text-align:center;
+  font-family:"Rage Italic","Brush Script MT","Segoe Script",cursive;
+  font-size:clamp(24px, 6vw, 34px);
+  line-height:1.25;
+  color:#ffe98a;
+  text-shadow:
+    0 0 6px rgba(255,255,210,.95),
+    0 0 14px rgba(255,219,90,.95),
+    0 0 28px rgba(255,181,30,.85),
+    0 0 48px rgba(255,145,0,.55);
+  opacity:0;
+  pointer-events:none;
+  animation:wishQuoteGlow 1.8s ease forwards 2.2s,
+            wishQuoteFloat 3.5s ease-in-out infinite 4s;
+}
+
+@keyframes wishQuoteGlow{
+  from{
+    opacity:0;
+    transform:translateY(18px) scale(.96);
+    filter:blur(5px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    filter:blur(0);
+  }
+}
+
+@keyframes wishQuoteFloat{
+  0%,100%{
+    transform:translateY(0);
+  }
+  50%{
+    transform:translateY(-6px);
+  }
+}
