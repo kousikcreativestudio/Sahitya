@@ -26,6 +26,31 @@ const photos = [
   'photos/photo12.jpg'
 ];
 
+const photoCache = new Map();
+
+function preloadPhoto(src) {
+  return new Promise(resolve => {
+    if (photoCache.has(src)) {
+      resolve(photoCache.get(src));
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      photoCache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+    img.src = src + "?v=20";
+  });
+}
+
+function preloadAllPhotos() {
+  return Promise.all(photos.map(src => preloadPhoto(src)));
+}
+
 const TARGET_STARS = 20;
 const TEXT_FORM_MS = 1250;
 const BLUR_BEFORE_GIFT_MS = 6400;
@@ -364,18 +389,61 @@ function openWish(){
   },SECOND_GIFT_DELAY_MS);
 }
 
-function startPhotos(){
+async function startPhotos(){
   show('photo');
-  photoStage.innerHTML='';
-  photoCount.textContent='';
-  showPhoto(0,photos);
+  photoStage.innerHTML = '';
+  photoCount.textContent = '';
+
+  // Preload first, then start photo popup
+  await preloadAllPhotos();
+
+  const list = photos.length ? photos : ['__placeholder__'];
+  showPhoto(0, list);
 }
 
-function showPhoto(i,list){
-  if(i>=list.length){
+async function showPhoto(i, list) {
+  if (i >= list.length) {
     show('final');
     return;
   }
+
+  photoStage.innerHTML = '';
+  photoSound();
+
+  const card = document.createElement('div');
+  card.className = 'photoCard';
+
+  if (list[i] === '__placeholder__') {
+    const ph = document.createElement('div');
+    ph.className = 'placeholder';
+    ph.innerHTML = 'Add your selected photos later ✨';
+    card.appendChild(ph);
+    photoCount.textContent = '';
+  } else {
+    const loadedImg = await preloadPhoto(list[i]);
+
+    if (loadedImg) {
+      const img = document.createElement('img');
+      img.src = loadedImg.src;
+      img.alt = 'Birthday memory photo';
+      card.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.innerHTML = 'Photo not found<br>' + list[i];
+      card.appendChild(ph);
+    }
+
+    photoCount.textContent = `${i + 1} / ${list.length}`;
+  }
+
+  photoStage.appendChild(card);
+  sparkBurst(app.clientWidth / 2, app.clientHeight / 2, 26);
+
+  setTimeout(() => {
+    showPhoto(i + 1, list);
+  }, 5200);
+}
 
   photoSound();
   photoStage.innerHTML='';
