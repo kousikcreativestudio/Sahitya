@@ -587,3 +587,24 @@ body{
   box-shadow:0 0 24px rgba(255,210,83,.72);
   cursor:pointer;
 }
+
+/* FIX PLAY BUTTON CLICK */
+#startScreen {
+  pointer-events: auto !important;
+}
+
+#startScreen .gameBg {
+  pointer-events: none !important;
+}
+
+.startContent,
+.startHint {
+  pointer-events: none !important;
+}
+
+.playBtn {
+  position: absolute !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
