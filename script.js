@@ -1,4 +1,4 @@
-const CACHE_VERSION = '90';
+const CACHE_VERSION = '100';
 
 const preloadImages = [
   `./assets/game-bg.jpg?v=${CACHE_VERSION}`,
@@ -53,6 +53,7 @@ let textParticles = [];
 let textAnimating = false;
 let textStartTime = 0;
 let photoRunId = 0;
+let cachedFullPhoto = null;
 
 const app = document.getElementById('app');
 const screens = {
@@ -111,6 +112,40 @@ function tone(freq,dur=.2,type='sine',vol=.09,delay=0){
   o.stop(t+dur+.05);
 }
 
+function noiseSweep(dur=.32, vol=.045, delay=0){
+  if(!audioCtx) return;
+
+  const t = audioCtx.currentTime + delay;
+  const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * dur));
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for(let i=0;i<bufferSize;i++){
+    const fade = 1 - (i / bufferSize);
+    data[i] = (Math.random() * 2 - 1) * fade;
+  }
+
+  const source = audioCtx.createBufferSource();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(650, t);
+  filter.frequency.exponentialRampToValueAtTime(2600, t + dur);
+
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(vol, t + 0.035);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+  source.buffer = buffer;
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  source.start(t);
+  source.stop(t + dur);
+}
+
 function collectSound(){
   tone(900,.1,'sine',.11);
   tone(1280,.17,'triangle',.085,.05);
@@ -131,10 +166,12 @@ function revealSound(){
 }
 
 function photoSound(){
-  tone(520,.13,'triangle',.055);
-  tone(820,.18,'sine',.06,.05);
-  tone(1180,.24,'triangle',.05,.12);
-  tone(1560,.22,'sine',.03,.2);
+  // Different from star collect: soft camera whoosh + sparkle.
+  noiseSweep(.34, .046, 0);
+  tone(245,.07,'triangle',.030,.03);
+  tone(490,.10,'sine',.026,.12);
+  tone(980,.16,'triangle',.021,.22);
+  tone(1470,.12,'sine',.016,.33);
 }
 
 function finalPhotoSound(){
@@ -466,22 +503,32 @@ async function startPhotos(){
   show('photo');
   photoRunId++;
   const runId = photoRunId;
+
+  cachedFullPhoto = null;
   photoStage.innerHTML = '<div class="placeholder">Preparing memories ✨</div>';
   photoCount.textContent = '';
 
-  await preloadAllPhotos();
-  if(runId !== photoRunId) return;
+  // Start loading fullphoto immediately in background so it opens fast after photo 12.
+  const fullPhotoPromise = loadFirstAvailablePhoto(fullPhotoSources).then(img => {
+    cachedFullPhoto = img;
+    return img;
+  });
 
+  await preloadAllPhotos();
+  fullPhotoPromise.catch(() => {});
+
+  if(runId !== photoRunId) return;
   showPhoto(0, photos, runId);
 }
 
 async function showPhoto(i, list, runId = photoRunId){
   if(runId !== photoRunId) return;
 
+  // After photo 12 finishes, open fullphoto directly.
   if(i >= list.length){
     photoStage.innerHTML = '';
     photoCount.textContent = '';
-    setTimeout(() => showFullPhoto(runId), 650);
+    showFullPhoto(runId);
     return;
   }
 
@@ -516,13 +563,13 @@ async function showPhoto(i, list, runId = photoRunId){
 async function showFullPhoto(runId = photoRunId){
   if(runId !== photoRunId) return;
 
+  const loadedImg = cachedFullPhoto || await loadFirstAvailablePhoto(fullPhotoSources);
+  if(runId !== photoRunId) return;
+
   show('finalPhoto');
   fullPhotoPopup.classList.remove('show');
   fullPhotoImg.removeAttribute('src');
   fullPhotoImg.alt = 'Final Photo';
-
-  const loadedImg = await loadFirstAvailablePhoto(fullPhotoSources);
-  if(runId !== photoRunId) return;
 
   if(loadedImg){
     fullPhotoImg.src = loadedImg.src;
@@ -531,12 +578,13 @@ async function showFullPhoto(runId = photoRunId){
   }
 
   finalPhotoSound();
+
   setTimeout(() => {
     if(runId !== photoRunId) return;
     fullPhotoPopup.classList.add('show');
     photoLightFlash(fullPhotoPopup, true);
     sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
-  }, 350);
+  }, 80);
 
   setTimeout(() => {
     if(runId !== photoRunId) return;
@@ -595,6 +643,7 @@ function replay(){
   fullPhotoImg.removeAttribute('src');
   firstGiftClicked=false;
   secondGiftClicked=false;
+  cachedFullPhoto=null;
   show('start');
 }
 
