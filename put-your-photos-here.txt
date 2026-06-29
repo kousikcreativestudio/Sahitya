@@ -1,0 +1,2 @@
+Add selected photos in this folder later. Example names: photo1.jpg, photo2.jpg, photo3.jpg
+Then edit script.js photos list.
