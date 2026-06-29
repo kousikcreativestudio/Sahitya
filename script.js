@@ -468,44 +468,35 @@ async function showPhoto(i, list, runId = photoRunId){
   setTimeout(()=>showPhoto(i+1,list,runId),PHOTO_DURATION_MS);
 }
 
-function openFullPhotoGift(){
+
+async function showFullPhoto(){
   show('finalPhoto');
-  fullGiftClicked = false;
-  fullPhotoGift.classList.remove('hide','open');
-  fullPhotoLabel.classList.remove('hide');
+
+  fullPhotoGift.style.display = 'none';
+  fullPhotoLabel.style.display = 'none';
   fullPhotoPopup.classList.remove('show');
   fullPhotoImg.removeAttribute('src');
-}
 
-async function handleFullPhotoGift(){
-  if(fullGiftClicked) return;
-  fullGiftClicked = true;
-  initAudio();
-  boxSound();
-  flashOpen();
-
-  fullPhotoGift.classList.add('hide');
-  fullPhotoLabel.classList.add('hide');
+  finalPhotoSound();
+  photoLightFlash(true);
 
   const loadedImg = await loadFirstAvailablePhoto(fullPhotoSources);
 
   if(loadedImg){
     fullPhotoImg.src = loadedImg.src;
   } else {
-    fullPhotoImg.src = '';
     fullPhotoImg.alt = 'Upload photos/fullphoto.jpg';
   }
 
-  setTimeout(()=>{
-    finalPhotoSound();
-    photoLightFlash(true);
+  setTimeout(function(){
     fullPhotoPopup.classList.add('show');
-    sparkBurst(app.clientWidth/2, app.clientHeight*.52, 70);
-  }, 420);
+    sparkBurst(app.clientWidth / 2, app.clientHeight * 0.55, 60);
+  }, 350);
 
-  setTimeout(()=>show('final'), FULL_PHOTO_DISPLAY_MS);
+  setTimeout(function(){
+    show('final');
+  }, 8500);
 }
-
 function handleFirstGift(){
   if(firstGiftClicked) return;
   firstGiftClicked = true;
