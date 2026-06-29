@@ -75,7 +75,7 @@ body{
 }
 
 .gameBg{
-  background-image:url("./assets/game-bg.jpg?v=75");
+  background-image:url("./assets/game-bg.jpg?v=90");
 }
 
 .startContent{
@@ -405,6 +405,7 @@ body{
 
 #wishScreen,
 #photoScreen,
+#fullPhotoScreen,
 #finalScreen{
   background:#020714;
 }
@@ -497,6 +498,7 @@ body{
   box-shadow:0 0 36px rgba(255,211,88,.58),0 30px 75px rgba(0,0,0,.48);
   animation:photoShow 5s ease-in-out forwards;
   position:relative;
+  overflow:hidden;
 }
 
 .photoCard::before{
@@ -524,6 +526,10 @@ body{
   padding:20px;
 }
 
+.photoCard img{
+  padding:0;
+}
+
 .photoCount{
   position:absolute;
   left:0;
@@ -543,24 +549,32 @@ body{
   100%{opacity:0;transform:translateY(-105px) rotateX(-17deg) rotateY(18deg) scale(.84)}
 }
 
-
-.photoLightFx{
+/* Shine is now inside photo/card only, not full screen. */
+.photoCard .photoLightFx,
+.fullPhotoPopup .photoLightFx{
   position:absolute;
-  inset:0;
-  z-index:20;
+  inset:10px;
+  z-index:6;
+  border-radius:22px;
   pointer-events:none;
   background:
-    radial-gradient(circle at 50% 48%, rgba(255,226,118,.55), transparent 34%),
-    linear-gradient(115deg, transparent 0 38%, rgba(255,245,190,.34) 49%, transparent 60%);
+    radial-gradient(circle at 50% 48%, rgba(255,226,118,.45), transparent 34%),
+    linear-gradient(115deg, transparent 0 38%, rgba(255,245,190,.30) 49%, transparent 60%);
   mix-blend-mode:screen;
   animation:photoLightSweep .88s ease-out forwards;
 }
 
-.photoLightFx.strong{
-  z-index:25;
+.fullPhotoPopup .photoLightFx{
+  inset:0;
+  border-radius:0;
+  z-index:5;
+}
+
+.photoCard .photoLightFx.strong,
+.fullPhotoPopup .photoLightFx.strong{
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,238,160,.92), rgba(255,198,54,.36) 30%, transparent 63%),
-    linear-gradient(115deg, transparent 0 32%, rgba(255,255,220,.55) 48%, transparent 66%);
+    radial-gradient(circle at 50% 50%, rgba(255,238,160,.65), rgba(255,198,54,.25) 30%, transparent 63%),
+    linear-gradient(115deg, transparent 0 32%, rgba(255,255,220,.42) 48%, transparent 66%);
   animation:photoLightSweep 1.35s ease-out forwards;
 }
 
@@ -570,70 +584,74 @@ body{
   100%{opacity:0;transform:scale(1.18) translateX(20%);filter:blur(10px)}
 }
 
-.fullPhotoGlow{
-  position:absolute;
-  inset:0;
-  z-index:7;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 50% 53%, rgba(255,214,73,.44), transparent 42%),
-    radial-gradient(circle at 50% 95%, rgba(255,185,43,.28), transparent 52%);
-  animation:fullGlowPulse 2.2s ease-in-out infinite;
+.fullPhotoBg{
+  filter:blur(6px) brightness(.72) saturate(1.08);
+  transform:scale(1.08);
 }
 
-@keyframes fullGlowPulse{
-  0%,100%{opacity:.7;transform:scale(.96)}
-  50%{opacity:1;transform:scale(1.04)}
-}
-
-.fullPhotoReveal{
+.fullPhotoPopup{
   position:absolute;
   inset:0;
-  z-index:12;
+  z-index:30;
   display:grid;
   place-items:center;
-  padding:0;
-  animation:fullPhotoReveal 7.2s ease-in-out forwards;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.92);
+  overflow:hidden;
+  background:#020714;
 }
 
-.fullPhotoReveal img,
-.fullPhotoPlaceholder{
+.fullPhotoPopup.show{
+  opacity:1;
+  transform:scale(1);
+  transition:opacity .9s ease, transform .95s ease;
+}
+
+.fullPhotoPopup img{
+  position:absolute;
+  inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
+  object-position:center center;
   border-radius:0;
-  box-shadow:
-    inset 0 0 60px rgba(255,221,111,.35),
-    0 0 55px rgba(255,211,88,.42);
+  z-index:1;
+  filter:brightness(1.05) contrast(1.02);
+  animation:fullPhotoZoom 9s ease-in-out forwards;
 }
 
-.fullPhotoPlaceholder{
-  display:grid;
-  place-items:center;
-  padding:24px;
-  text-align:center;
-  background:linear-gradient(145deg,#123777,#07142d);
-  color:#fff1b5;
-  font-size:26px;
-  font-weight:700;
-}
-
-.fullPhotoReveal::after{
+.fullPhotoPopup::after{
   content:"";
   position:absolute;
   inset:0;
+  z-index:4;
   pointer-events:none;
   background:
-    radial-gradient(circle at 50% 50%, transparent 44%, rgba(0,0,0,.34) 100%),
-    linear-gradient(180deg, rgba(255,222,110,.18), transparent 26%, transparent 72%, rgba(255,204,76,.20));
-  mix-blend-mode:screen;
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,.36) 100%),
+    linear-gradient(180deg, rgba(255,224,116,.16), transparent 20%, transparent 76%, rgba(255,192,55,.2));
 }
 
-@keyframes fullPhotoReveal{
-  0%{opacity:0;transform:scale(.72);filter:blur(12px) brightness(1.6)}
-  14%{opacity:1;transform:scale(1);filter:blur(0) brightness(1.12)}
-  78%{opacity:1;transform:scale(1.035);filter:blur(0) brightness(1.06)}
-  100%{opacity:0;transform:scale(1.10);filter:blur(7px) brightness(.85)}
+.finalLight{
+  position:absolute;
+  inset:-10%;
+  z-index:2;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(255,204,67,.22), transparent 46%),
+    radial-gradient(circle at 50% 96%, rgba(255,178,37,.24), transparent 50%);
+  mix-blend-mode:screen;
+  animation:premiumLight 3.6s ease-in-out infinite;
+}
+
+@keyframes premiumLight{
+  0%,100%{opacity:.35;transform:scale(.98)}
+  50%{opacity:.62;transform:scale(1.04)}
+}
+
+@keyframes fullPhotoZoom{
+  from{transform:scale(1)}
+  to{transform:scale(1.06)}
 }
 
 .finalBg{
@@ -689,260 +707,4 @@ body{
   box-shadow:0 0 24px rgba(255,210,83,.72);
   cursor:pointer;
   touch-action:manipulation;
-}
-
-/* FINAL FULL PHOTO FIX */
-.fullPhotoGiftBox {
-  position: absolute;
-  left: 50%;
-  bottom: 12%;
-  transform: translateX(-50%) scale(1);
-  width: min(70vw, 320px);
-  aspect-ratio: 1 / 1;
-  border: 0;
-  background: transparent;
-  z-index: 20;
-  cursor: pointer;
-  filter: drop-shadow(0 0 35px rgba(255, 210, 72, 0.95));
-  animation: giftFloat 2s ease-in-out infinite;
-}
-
-.fullPhotoGiftBox img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.fullPhotoGiftBox.hide {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) scale(0.6);
-  transition: 0.6s ease;
-}
-
-.fullPhotoLabel {
-  position: absolute;
-  left: 5%;
-  right: 5%;
-  bottom: 6%;
-  z-index: 21;
-  text-align: center;
-  color: #fff3bf;
-  font-size: 18px;
-  text-shadow: 0 0 15px rgba(255, 212, 75, 0.95);
-}
-
-.fullPhotoLabel.hide {
-  opacity: 0;
-}
-
-.fullPhotoPopup {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.86);
-}
-
-.fullPhotoPopup.show {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-  transition: opacity 0.9s ease, transform 1s ease;
-}
-
-.fullPhotoPopup img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  border-radius: 0;
-  box-shadow:
-    0 0 45px rgba(255, 221, 100, 0.75),
-    inset 0 0 60px rgba(255, 220, 90, 0.35);
-  animation: fullPhotoZoom 8s ease-in-out infinite alternate;
-}
-
-.finalLight {
-  position: absolute;
-  inset: -20%;
-  z-index: 2;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at center, rgba(255, 242, 170, 0.42), transparent 35%),
-    radial-gradient(circle at 50% 85%, rgba(255, 186, 35, 0.36), transparent 42%);
-  mix-blend-mode: screen;
-  animation: premiumLight 2.8s ease-in-out infinite;
-}
-
-.fullPhotoPopup img {
-  z-index: 1;
-}
-
-@keyframes premiumLight {
-  0%, 100% {
-    opacity: 0.45;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes fullPhotoZoom {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.06);
-  }
-}
-
-
-/* CLEAN FINAL FULLPHOTO FLOW OVERRIDE */
-#fullPhotoScreen{
-  background:#020714;
-}
-
-#fullPhotoScreen .fullPhotoBg{
-  filter:blur(6px) brightness(.72) saturate(1.08);
-  transform:scale(1.08);
-}
-
-.fullPhotoGiftBox{
-  position:absolute !important;
-  left:50% !important;
-  bottom:12% !important;
-  transform:translateX(-50%) scale(1) !important;
-  width:min(70vw,320px) !important;
-  aspect-ratio:1/1 !important;
-  border:0 !important;
-  background:transparent !important;
-  z-index:20 !important;
-  cursor:pointer !important;
-  pointer-events:auto !important;
-  touch-action:manipulation !important;
-  filter:drop-shadow(0 0 36px rgba(255,210,72,.95)) !important;
-  animation:giftFloat 2s ease-in-out infinite !important;
-}
-
-.fullPhotoGiftBox img{
-  width:100% !important;
-  height:100% !important;
-  object-fit:contain !important;
-  display:block !important;
-  pointer-events:none !important;
-}
-
-.fullPhotoGiftBox.hide{
-  opacity:0 !important;
-  pointer-events:none !important;
-  transform:translateX(-50%) scale(.55) !important;
-  transition:opacity .55s ease, transform .55s ease !important;
-}
-
-.fullPhotoLabel{
-  position:absolute !important;
-  left:5% !important;
-  right:5% !important;
-  bottom:6% !important;
-  z-index:21 !important;
-  text-align:center !important;
-  color:#fff3bf !important;
-  font-size:18px !important;
-  text-shadow:0 0 15px rgba(255,212,75,.95) !important;
-  pointer-events:none !important;
-}
-
-.fullPhotoLabel.hide{
-  opacity:0 !important;
-  transition:opacity .45s ease !important;
-}
-
-.fullPhotoPopup{
-  position:absolute !important;
-  inset:0 !important;
-  z-index:30 !important;
-  display:grid !important;
-  place-items:center !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-  transform:scale(.92) !important;
-  overflow:hidden !important;
-  background:#020714 !important;
-}
-
-.fullPhotoPopup.show{
-  opacity:1 !important;
-  transform:scale(1) !important;
-  transition:opacity .9s ease, transform .95s ease !important;
-}
-
-.fullPhotoPopup img{
-  position:absolute !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100% !important;
-  object-fit:cover !important;
-  object-position:center center !important;
-  border-radius:0 !important;
-  z-index:1 !important;
-  filter:brightness(1.05) contrast(1.02) !important;
-  animation:fullPhotoZoom 9s ease-in-out forwards !important;
-}
-
-.fullPhotoPopup.show::before{
-  content:"";
-  position:absolute;
-  inset:-22%;
-  z-index:3;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255,238,168,.62), transparent 28%),
-    linear-gradient(112deg, transparent 0 38%, rgba(255,250,210,.48) 48%, transparent 60%);
-  mix-blend-mode:screen;
-  animation:finalLightSweep 2.4s ease-out forwards;
-}
-
-.fullPhotoPopup.show::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:4;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,.36) 100%),
-    linear-gradient(180deg, rgba(255,224,116,.16), transparent 20%, transparent 76%, rgba(255,192,55,.2));
-}
-
-.finalLight{
-  position:absolute !important;
-  inset:-10% !important;
-  z-index:2 !important;
-  pointer-events:none !important;
-  background:
-    radial-gradient(circle at 50% 55%, rgba(255,204,67,.22), transparent 46%),
-    radial-gradient(circle at 50% 96%, rgba(255,178,37,.24), transparent 50%) !important;
-  mix-blend-mode:screen !important;
-  animation:premiumLight 3.6s ease-in-out infinite !important;
-}
-
-@keyframes finalLightSweep{
-  0%{opacity:0;transform:translateX(-22%) scale(.9);filter:blur(8px)}
-  20%{opacity:1}
-  100%{opacity:0;transform:translateX(22%) scale(1.15);filter:blur(18px)}
-}
-
-@keyframes premiumLight{
-  0%,100%{opacity:.42;transform:scale(.98)}
-  50%{opacity:.82;transform:scale(1.06)}
-}
-
-@keyframes fullPhotoZoom{
-  from{transform:scale(1);}
-  to{transform:scale(1.07);}
 }
