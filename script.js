@@ -497,6 +497,7 @@ async function showFullPhoto(){
     show('final');
   }, 8500);
 }
+
 function handleFirstGift(){
   if(firstGiftClicked) return;
   firstGiftClicked = true;
