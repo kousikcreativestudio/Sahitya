@@ -971,3 +971,48 @@ body{
 .screen.active{
   visibility:visible;
 }
+
+/* WISH PAGE LAG FIX ONLY - PHOTOS NOT TOUCHED */
+#wishScreen,
+#wishScreen .wishImageBg,
+#wishScreen #starTextCanvas,
+#wishScreen .secondGiftBox,
+#wishScreen #wishFinalQuote{
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+
+#wishScreen .wishImageBg{
+  will-change:transform, filter;
+  transform:translate3d(0,0,0) scale(1.02);
+}
+
+#wishScreen .wishImageBg.move{
+  animation:wishBgMoveSmooth 11s ease-in-out infinite alternate !important;
+}
+
+@keyframes wishBgMoveSmooth{
+  from{
+    transform:translate3d(0,0,0) scale(1.02);
+  }
+  to{
+    transform:translate3d(0,-10px,0) scale(1.045);
+  }
+}
+
+#wishScreen.blur .wishImageBg{
+  filter:blur(3px) brightness(.84) !important;
+}
+
+#wishScreen #starTextCanvas{
+  transform:translateZ(0);
+  will-change:transform;
+}
+
+#wishScreen .secondGiftBox{
+  will-change:transform, opacity;
+}
+
+#wishScreen #wishFinalQuote{
+  will-change:opacity, transform;
+}
