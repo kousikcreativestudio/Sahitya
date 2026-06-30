@@ -925,3 +925,49 @@ body{
   animation:none !important;
   transition-delay:0s !important;
 }
+
+/* SAFE LAG FIX ONLY - DO NOT CHANGE PHOTO GLOW DESIGN */
+#app,
+.screen,
+.wishImageBg,
+.bg,
+#starTextCanvas,
+.fullPhotoPopup,
+.fullPhotoPopup img{
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+
+.screen{
+  contain:layout paint;
+}
+
+.wishImageBg,
+.bg{
+  will-change:transform;
+}
+
+#starTextCanvas{
+  will-change:contents;
+}
+
+.photoCard{
+  will-change:transform, opacity;
+}
+
+.photoCard::after{
+  will-change:transform, opacity;
+}
+
+.fullPhotoPopup img{
+  will-change:transform;
+}
+
+/* reduce heavy rendering only while hidden screens are inactive */
+.screen:not(.active){
+  visibility:hidden;
+}
+
+.screen.active{
+  visibility:visible;
+}
