@@ -823,3 +823,52 @@ body{
     filter:blur(4px);
   }
 }
+
+/* QUOTE FIX ONLY - wish screen quote, no photo/design changes */
+#wishScreen #wishFinalQuote{
+  position:absolute !important;
+  left:6% !important;
+  right:6% !important;
+  bottom:12% !important;
+  z-index:1500 !important;
+  display:block !important;
+  visibility:visible !important;
+  text-align:center !important;
+  font-family:"Rage Italic","Brush Script MT","Segoe Script",cursive !important;
+  font-size:clamp(24px, 6vw, 34px) !important;
+  line-height:1.25 !important;
+  color:#ffe98a !important;
+  text-shadow:
+    0 0 7px rgba(255,255,225,1),
+    0 0 16px rgba(255,219,90,1),
+    0 0 32px rgba(255,181,30,.95),
+    0 0 58px rgba(255,145,0,.75) !important;
+  pointer-events:none !important;
+  opacity:0;
+  transform:translateY(14px) scale(.96);
+  filter:blur(4px);
+  animation:wishFinalQuoteOnly 4.1s ease forwards 3.1s !important;
+}
+
+@keyframes wishFinalQuoteOnly{
+  0%{
+    opacity:0;
+    transform:translateY(14px) scale(.96);
+    filter:blur(4px);
+  }
+  18%{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    filter:blur(0);
+  }
+  78%{
+    opacity:1;
+    transform:translateY(-4px) scale(1);
+    filter:blur(0);
+  }
+  100%{
+    opacity:0;
+    transform:translateY(-16px) scale(.97);
+    filter:blur(4px);
+  }
+}
